@@ -252,6 +252,38 @@
   .loading{ text-align:center; color: var(--muted); padding: 60px 0; font-family: var(--font-mono); font-size:13px; }
   .footnote{ text-align:center; color: var(--muted); font-size:11px; margin-top: 18px; }
 
+  /* Level + Streak */
+  .level-badge{
+    display:flex; align-items:center; gap:6px; font-weight:800; font-size:14px;
+    color: var(--gold); margin-bottom: 4px;
+  }
+  .level-badge .lv-num{ font-family: var(--font-mono); }
+  .streak-line{
+    display:flex; align-items:center; gap:6px; font-size:13px; color: var(--muted);
+    margin-bottom: 12px; font-family: var(--font-mono); font-weight:700;
+  }
+  .streak-line b{ color: var(--text); }
+
+  /* Stats */
+  .stats-grid{
+    display:grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  }
+  .stat-item{
+    background: var(--panel-2); border:1px solid var(--line); border-radius:12px;
+    padding: 12px; display:flex; flex-direction:column; gap:4px;
+  }
+  .stat-item .stat-label{ font-size:11px; color: var(--muted); }
+  .stat-item .stat-value{ font-family: var(--font-mono); font-weight:800; font-size:18px; }
+  .stat-item .stat-value.pos{ color: var(--green); }
+  .stat-item .stat-value.neg{ color: var(--red); }
+
+  /* Daily message */
+  .daily-message{
+    text-align:center; background: var(--panel); border:1px solid var(--line);
+    border-radius: 14px; padding: 12px; margin-top: 16px; font-size:13px;
+    color: var(--text); font-family: var(--font-mono); font-weight:700;
+  }
+
   /* Login screen */
   #loginScreen{ text-align:center; padding-top: 90px; }
   #loginScreen .login-title{ justify-content:center; }
@@ -333,6 +365,7 @@ async function showApp(user){
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   await loadState();
+  await checkStreakBonus();
   render();
 }
 
@@ -354,6 +387,20 @@ const PHASES = [
 const START_DATE = PHASES[0].start;
 const END_DATE = PHASES[PHASES.length-1].end;
 const DAILY_GOAL = 100;
+
+const LEVEL_TITLES = [
+  'Beginner Researcher',
+  'Junior Researcher',
+  'Assistant Researcher',
+  'Associate Researcher',
+  'Research Specialist',
+  'Lead Researcher',
+  'Principal Researcher',
+  'Thesis Expert',
+  'Thesis Master',
+  'Thesis Legend',
+];
+const ORDINAL_PHASE_NAMES = ['الأولى','الثانية','الثالثة'];
 
 function todayKey(d = new Date()){
   const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
@@ -570,6 +617,7 @@ async function addEntry(action){
   const entries = getTodayEntries();
   entries.push({ id: uniqueId(), aid: action.id, label: action.label, xp: action.xp, ts: Date.now(), note: '' });
   await saveState();
+  await checkStreakBonus();
   render();
 }
 
@@ -611,6 +659,95 @@ function last7Days(){
   return out;
 }
 
+function totalXpAllTime(){
+  return Object.values(state.days).reduce((sum, entries) => sum + entries.reduce((s,e)=>s+e.xp,0), 0);
+}
+
+function levelInfo(){
+  const totalXp = Math.max(0, totalXpAllTime());
+  let level = Math.floor(totalXp / 1000) + 1;
+  if(level > LEVEL_TITLES.length) level = LEVEL_TITLES.length;
+  const title = LEVEL_TITLES[level - 1];
+  return { level, title, totalXp };
+}
+
+function computeStreak(){
+  let d = new Date(); d.setHours(0,0,0,0);
+  const todayEntries = state.days[todayKey(d)] || [];
+  const todayTotal = todayEntries.reduce((s,e)=>s+e.xp,0);
+  if(todayTotal < DAILY_GOAL){
+    d.setDate(d.getDate() - 1);
+  }
+  let streak = 0;
+  while(true){
+    const k = todayKey(d);
+    const entries = state.days[k];
+    if(!entries || entries.length === 0) break;
+    const total = entries.reduce((s,e)=>s+e.xp,0);
+    if(total >= DAILY_GOAL){
+      streak++;
+      d.setDate(d.getDate() - 1);
+    } else break;
+  }
+  return streak;
+}
+
+async function checkStreakBonus(){
+  const streak = computeStreak();
+  if(streak > 0 && streak % 7 === 0){
+    if(!state.streakBonusDays) state.streakBonusDays = [];
+    const key = todayKey();
+    if(!state.streakBonusDays.includes(key)){
+      const entries = getTodayEntries();
+      entries.push({ id: uniqueId(), aid:'streak_bonus', label: `🔥 مكافأة سلسلة ${streak} أيام متتالية`, xp:50, ts: Date.now(), note:'' });
+      state.streakBonusDays.push(key);
+      await saveState();
+    }
+  }
+}
+
+function computeStats(){
+  const activeDays = Object.keys(state.days)
+    .filter(k => (state.days[k] || []).length > 0)
+    .map(k => ({ key:k, total: state.days[k].reduce((s,e)=>s+e.xp,0), count: state.days[k].length }));
+
+  const activeDaysCount = activeDays.length;
+  const sumTotal = activeDays.reduce((s,d)=>s+d.total,0);
+  const avg = activeDaysCount > 0 ? sumTotal / activeDaysCount : 0;
+
+  let best = null, worst = null;
+  activeDays.forEach(d => {
+    if(!best || d.total > best.total) best = d;
+    if(!worst || d.total < worst.total) worst = d;
+  });
+
+  const sessionsCount = activeDays.reduce((s,d)=>s+d.count,0);
+
+  return { avg, best, worst, sessionsCount, streak: computeStreak() };
+}
+
+function fmtStatDate(key){
+  const d = dateFromKey(key);
+  return d.toLocaleDateString('ar', { day:'numeric', month:'short' });
+}
+
+function dailyMessage(info){
+  const { notStarted, daysUntilStart, finished, dayNum, currentPhaseIdx, dayInPhase } = info;
+  if(notStarted){
+    return `يبدأ التحدي بعد ${daysUntilStart === 1 ? 'يوم واحد' : daysUntilStart + ' أيام'}`;
+  }
+  if(finished){
+    return `اليوم ${dayNum} | انتهت جميع المراحل 🏁`;
+  }
+  const phaseDays = PHASES[currentPhaseIdx].days;
+  const daysLeft = phaseDays - dayInPhase;
+  const phaseWord = ORDINAL_PHASE_NAMES[currentPhaseIdx] || PHASES[currentPhaseIdx].name;
+  if(daysLeft <= 0){
+    return `اليوم ${dayNum} | اليوم الأخير في المرحلة ${phaseWord}`;
+  }
+  return `اليوم ${dayNum} | تبقى ${daysLeft} ${daysLeft === 1 ? 'يوم' : 'أيام'} لإنهاء المرحلة ${phaseWord}`;
+}
+
 function render(){
   const app = document.getElementById('app');
   const { notStarted, daysUntilStart, dayNum, currentPhaseIdx, dayInPhase, finished } = phaseInfo();
@@ -620,6 +757,8 @@ function render(){
   const goalReached = totalToday >= DAILY_GOAL;
   const hist = last7Days();
   const maxAbs = Math.max(...hist.map(h=>Math.abs(h.total)), DAILY_GOAL);
+  const lvl = levelInfo();
+  const streakCount = computeStreak();
 
   const phaseHud = PHASES.map((p,i)=>{
     let pct = 0;
@@ -687,6 +826,9 @@ function render(){
 
     <div class="phase-hud">${phaseHud}</div>
     <div class="phase-labels"><b>${phaseLabel}</b><span>${TOTAL_DAYS} يوم</span></div>
+
+    <div class="level-badge">🎖️ <span class="lv-num">Level ${lvl.level}:</span> ${lvl.title}</div>
+    <div class="streak-line">🔥 <b>${streakCount}</b> ${streakCount === 1 ? 'يوم متتالي' : 'أيام متتالية'}</div>
 
     <div class="card">
       <div class="xp-row">
@@ -821,7 +963,40 @@ function render(){
       </div>` : ''}
     </div>
 
+    ${(() => {
+      const stats = computeStats();
+      return `
+      <div class="card">
+        <div class="log-header"><h3>📊 الإحصائيات</h3></div>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <span class="stat-label">متوسط XP يوميًا</span>
+            <span class="stat-value ${stats.avg>=0?'pos':'neg'}">${stats.avg>=0?'+':''}${Math.round(stats.avg)}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">أفضل يوم</span>
+            <span class="stat-value pos">${stats.best ? (stats.best.total>=0?'+':'')+stats.best.total : '—'}</span>
+            <span class="stat-label">${stats.best ? fmtStatDate(stats.best.key) : ''}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">أسوأ يوم</span>
+            <span class="stat-value ${stats.worst && stats.worst.total<0?'neg':'pos'}">${stats.worst ? (stats.worst.total>=0?'+':'')+stats.worst.total : '—'}</span>
+            <span class="stat-label">${stats.worst ? fmtStatDate(stats.worst.key) : ''}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">سلسلة الأيام المتتالية</span>
+            <span class="stat-value">🔥 ${stats.streak}</span>
+          </div>
+          <div class="stat-item" style="grid-column: span 2;">
+            <span class="stat-label">عدد جلسات العمل (الإجراءات المسجّلة)</span>
+            <span class="stat-value">${stats.sessionsCount}</span>
+          </div>
+        </div>
+      </div>`;
+    })()}
+
     <div class="footnote">البيانات محفوظة تلقائيًا على هذا الجهاز</div>
+    <div class="daily-message">${dailyMessage({ notStarted, daysUntilStart, finished, dayNum, currentPhaseIdx, dayInPhase })}</div>
   `;
 
   allActions().forEach(a => {
