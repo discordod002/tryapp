@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>سجل XP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0f0e17;
+    --panel: #1a1826;
+    --panel-2: #221f33;
+    --line: #322e47;
+    --text: #efeaf7;
+    --muted: #948db3;
+    --gold: #f2c94c;
+    --gold-dim: #7a6a2a;
+    --green: #6ee7a8;
+    --red: #ff6b78;
+    --font-display: 'Tajawal', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+  *{ box-sizing: border-box; }
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-display);
+    padding: 20px 14px 60px;
+    min-height: 100vh;
+  }
+  .wrap{ max-width: 480px; margin: 0 auto; }
+
+  /* Header */
+  .title{
+    font-size: 22px; font-weight: 900; letter-spacing: .5px;
+    display:flex; align-items:center; gap:8px; margin-bottom:2px;
+  }
+  .title span.mark{ color: var(--gold); }
+  .subtitle{ color: var(--muted); font-size: 13px; margin-bottom: 18px; }
+
+  /* Phase HUD */
+  .phase-hud{
+    display:flex; gap:4px; margin-bottom: 6px;
+  }
+  .phase-seg{
+    height: 10px; border-radius: 6px; background: var(--panel-2);
+    border: 1px solid var(--line); overflow:hidden; position:relative;
+  }
+  .phase-seg .fill{
+    height:100%; border-radius: 6px 0 0 6px;
+    transition: width .4s ease;
+  }
+  .phase-labels{
+    display:flex; justify-content:space-between; font-family: var(--font-mono);
+    font-size: 11px; color: var(--muted); margin-bottom: 20px;
+  }
+  .phase-labels b{ color: var(--text); }
+
+  /* Today card */
+  .card{
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+  .xp-row{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:10px; }
+  .xp-today{
+    font-family: var(--font-mono); font-weight: 800; font-size: 34px;
+  }
+  .xp-today.neg{ color: var(--red); }
+  .xp-today.pos{ color: var(--green); }
+  .xp-goal-label{ color: var(--muted); font-size: 13px; font-family: var(--font-mono); }
+  .bar-track{
+    height: 14px; background: var(--panel-2); border-radius: 8px;
+    border: 1px solid var(--line); overflow:hidden;
+  }
+  .bar-fill{
+    height:100%; border-radius: 8px;
+    background: linear-gradient(90deg, var(--gold-dim), var(--gold));
+    transition: width .4s ease;
+  }
+  .bar-fill.done{ background: linear-gradient(90deg, #2d7a52, var(--green)); }
+
+  /* Action grid */
+  .actions{
+    display:grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;
+  }
+  .act-btn{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap: 6px; padding: 14px 8px; border-radius: 14px; border: 1px solid var(--line);
+    background: var(--panel); color: var(--text); cursor:pointer;
+    font-family: var(--font-display); font-size: 13px; font-weight:700;
+    transition: transform .12s ease, border-color .12s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .act-btn:active{ transform: scale(0.96); }
+  .act-btn .emoji{ font-size: 22px; }
+  .act-btn .xp{ font-family: var(--font-mono); font-size: 12px; }
+  .act-btn.plus{ border-color: rgba(110,231,168,.35); }
+  .act-btn.plus .xp{ color: var(--green); }
+  .act-btn.minus{ border-color: rgba(255,107,120,.35); }
+  .act-btn.minus .xp{ color: var(--red); }
+  .act-btn.wide{ grid-column: span 2; flex-direction: row; }
+  .act-btn{ position: relative; }
+  .act-btn .del-x{
+    position:absolute; top:4px; left:4px; width:18px; height:18px;
+    border-radius:50%; background: var(--panel-2); border:1px solid var(--line);
+    color: var(--muted); font-size:11px; line-height:16px; text-align:center;
+    cursor:pointer;
+  }
+  .act-btn .edit-pencil{
+    position:absolute; top:4px; right:4px; width:18px; height:18px;
+    border-radius:50%; background: var(--panel-2); border:1px solid var(--line);
+    color: var(--muted); font-size:10px; line-height:16px; text-align:center;
+    cursor:pointer;
+  }
+  .add-panel .reset-link{
+    background:none; border:none; color: var(--muted); font-size:12px;
+    text-decoration: underline; cursor:pointer; padding:0; margin-inline-end:auto;
+  }
+  .act-btn.add-new{
+    border-style: dashed; border-color: var(--line); color: var(--muted);
+    background: transparent;
+  }
+
+  /* Sections + sorting */
+  .section-header{
+    display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; gap:8px; flex-wrap:wrap;
+  }
+  .section-title{ font-size:14px; font-weight:800; margin:0; display:flex; align-items:center; gap:6px; }
+  .section-title.plus{ color: var(--green); }
+  .section-title.minus{ color: var(--red); }
+  .sort-controls{ display:flex; gap:4px; }
+  .sort-btn{
+    background: var(--panel-2); border:1px solid var(--line); color: var(--muted);
+    font-family: var(--font-display); font-size:11px; border-radius:8px; padding:5px 8px; cursor:pointer;
+  }
+  .sort-btn.active{ background: var(--gold); color:#241f0a; border-color: var(--gold); font-weight:700; }
+  .order-arrows{ display:flex; gap:4px; margin-top:2px; }
+  .arrow-btn{
+    width:22px; height:18px; border-radius:5px; background: var(--panel-2); border:1px solid var(--line);
+    color: var(--muted); font-size:10px; cursor:pointer; line-height:1;
+  }
+
+  /* Add-action panel */
+  .add-panel{
+    background: var(--panel); border:1px solid var(--line); border-radius:14px;
+    padding: 14px; margin-bottom: 16px; display:flex; flex-direction:column; gap:10px;
+  }
+  .add-panel input[type="text"], .add-panel input[type="number"]{
+    background: var(--panel-2); border:1px solid var(--line); border-radius:10px;
+    padding: 10px 12px; color: var(--text); font-family: var(--font-display); font-size:14px;
+  }
+  .add-panel .row{ display:flex; gap:8px; }
+  .add-panel .row input[type="number"]{ width: 100px; font-family: var(--font-mono); }
+  .add-panel .actions-row{ display:flex; gap:8px; justify-content:flex-end; }
+  .add-panel button{
+    border-radius:10px; border:1px solid var(--line); padding: 9px 14px;
+    font-family: var(--font-display); font-weight:700; font-size: 13px; cursor:pointer;
+  }
+  .add-panel .save-btn{ background: var(--gold); color:#241f0a; border-color: var(--gold); }
+  .add-panel .cancel-btn{ background: transparent; color: var(--muted); }
+  .add-hint{ color: var(--muted); font-size:11px; }
+
+  /* Log */
+  .log-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .log-header h3{ font-size: 14px; margin:0; color: var(--muted); font-weight:700; }
+  .undo{ font-size:12px; color: var(--muted); background:none; border:none; cursor:pointer; text-decoration: underline; padding:0; }
+  .undo:disabled{ opacity:.4; cursor:default; text-decoration:none; }
+  .log-list{ display:flex; flex-direction:column; gap:6px; }
+  .log-empty{ color: var(--muted); font-size:13px; text-align:center; padding: 14px 0; }
+  .log-item{
+    display:flex; align-items:center; justify-content:space-between;
+    background: var(--panel-2); border:1px solid var(--line); border-radius:10px;
+    padding: 8px 12px; font-size: 13px;
+  }
+  .log-item .l-left{ display:flex; align-items:center; gap:8px; }
+  .log-item .l-time{ color: var(--muted); font-family: var(--font-mono); font-size:11px; }
+  .log-item .l-xp{ font-family: var(--font-mono); font-weight:700; }
+  .log-item .l-xp.pos{ color: var(--green); }
+  .log-item .l-xp.minus{ color: var(--red); }
+  .log-item-wrap{ background: var(--panel-2); border:1px solid var(--line); border-radius:10px; padding: 8px 12px; }
+  .log-item-wrap .log-item{ background: none; border:none; padding:0; }
+  .log-note{
+    margin-top:6px; padding-top:6px; border-top:1px dashed var(--line);
+    color: var(--text); font-size:12px; white-space: pre-wrap; line-height:1.6;
+  }
+  .note-toggle{
+    background:none; border:none; color: var(--muted); font-size:11px;
+    text-decoration: underline; cursor:pointer; padding:0; margin-top:6px;
+  }
+  .note-editor{ margin-top:8px; display:flex; flex-direction:column; gap:8px; }
+  .note-editor textarea{
+    background: var(--panel); border:1px solid var(--line); border-radius:10px;
+    padding:10px; color: var(--text); font-family: var(--font-display); font-size:13px;
+    min-height: 70px; resize: vertical;
+  }
+  .note-editor .actions-row{ display:flex; gap:8px; justify-content:flex-end; }
+  .note-editor button{
+    border-radius:10px; border:1px solid var(--line); padding: 7px 12px;
+    font-family: var(--font-display); font-weight:700; font-size: 12px; cursor:pointer;
+  }
+  .note-editor .save-btn{ background: var(--gold); color:#241f0a; border-color: var(--gold); }
+  .note-editor .cancel-btn{ background: transparent; color: var(--muted); }
+
+  /* History */
+  .history{ display:flex; gap:6px; align-items:flex-end; height: 60px; margin-top: 6px; }
+  .hist-col{ flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .hist-bar{ width:100%; border-radius:4px 4px 0 0; background: var(--gold-dim); min-height:2px; }
+  .hist-bar.pos{ background: var(--green); }
+  .hist-bar.neg{ background: var(--red); }
+  .hist-day{ font-size: 10px; color: var(--muted); font-family: var(--font-mono); }
+
+  /* Calendar */
+  .cal-toggle{
+    width:100%; background: var(--panel-2); border:1px solid var(--line); border-radius:10px;
+    color: var(--text); font-family: var(--font-display); font-weight:700; font-size:13px;
+    padding: 10px; cursor:pointer;
+  }
+  .calendar{ margin-top: 14px; }
+  .cal-month{ margin-bottom: 20px; }
+  .cal-month-title{ font-size:13px; font-weight:700; color: var(--text); margin-bottom:8px; }
+  .cal-weekdays, .cal-grid{
+    display:grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
+  }
+  .cal-weekdays{ margin-bottom:4px; }
+  .cal-weekdays span{ text-align:center; font-size:10px; color: var(--muted); font-family: var(--font-mono); }
+  .cal-day{
+    aspect-ratio: 1; border-radius: 8px; border:1px solid var(--line);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background: var(--panel-2); gap:2px;
+  }
+  .cal-day.oor{ background: transparent; border-color: transparent; opacity:.28; }
+  .cal-day.zero{ background: var(--panel-2); }
+  .cal-day.partial{ background: rgba(242,201,76,.14); border-color: rgba(242,201,76,.4); }
+  .cal-day.goal{ background: rgba(110,231,168,.16); border-color: rgba(110,231,168,.4); }
+  .cal-day.neg{ background: rgba(255,107,120,.16); border-color: rgba(255,107,120,.4); }
+  .cal-day.today{ box-shadow: 0 0 0 2px var(--gold) inset; }
+  .cal-daynum{ font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+  .cal-xp{ font-family: var(--font-mono); font-size: 10px; font-weight:700; }
+  .cal-day.goal .cal-xp{ color: var(--green); }
+  .cal-day.partial .cal-xp{ color: var(--gold); }
+  .cal-day.neg .cal-xp{ color: var(--red); }
+  .cal-day.zero .cal-xp{ color: var(--muted); }
+  .cal-legend{ display:flex; gap:14px; margin-top:8px; font-size:11px; color: var(--muted); }
+  .cal-legend .dot{ display:inline-block; width:9px; height:9px; border-radius:3px; margin-inline-end:4px; vertical-align:middle; }
+
+  .loading{ text-align:center; color: var(--muted); padding: 60px 0; font-family: var(--font-mono); font-size:13px; }
+  .footnote{ text-align:center; color: var(--muted); font-size:11px; margin-top: 18px; }
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <div class="loading" id="loading">جارٍ تحميل السجل...</div>
+</div>
+
+<script>
+const STORAGE_KEY = 'xp-tracker-state-v1';
+
+const ACTIONS = [
+  { id:'para',   label:'كتابة فقرة',           xp: 10,  emoji:'📝', kind:'plus' },
+  { id:'prob',   label:'حل مسألة',             xp: 100, emoji:'🧩', kind:'plus' },
+  { id:'submit', label:'إرسال عمل إلى المشرف', xp: 100, emoji:'📤', kind:'plus' },
+  { id:'idle',   label:'ساعتا عمل دون كتابة سطر واحد', xp: -20, emoji:'😴', kind:'minus' },
+  { id:'lazy',   label:'يوم كامل من اللهو ومواقع التواصل الاجتماعي', xp: -50, emoji:'🎮', kind:'minus', wide:true },
+];
+
+const PHASES = [
+  { name:'المرحلة ١', start:'2026-07-17', end:'2026-08-31' },
+  { name:'المرحلة ٢', start:'2026-09-01', end:'2026-11-30' },
+  { name:'المرحلة ٣', start:'2026-12-01', end:'2026-12-31' },
+];
+const START_DATE = PHASES[0].start;
+const END_DATE = PHASES[PHASES.length-1].end;
+const DAILY_GOAL = 100;
+
+function todayKey(d = new Date()){
+  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function dateFromKey(k){ const [y,m,d]=k.split('-').map(Number); return new Date(y, m-1, d); }
+function daysBetween(a,b){ return Math.round((b-a)/86400000); }
+
+// days count per phase, derived from its date range
+PHASES.forEach(p => { p.days = daysBetween(dateFromKey(p.start), dateFromKey(p.end)) + 1; });
+const TOTAL_DAYS = daysBetween(dateFromKey(START_DATE), dateFromKey(END_DATE)) + 1;
+
+const MONTH_NAMES = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+const WEEKDAY_SHORT = ['أحد','إثن','ثلا','أرب','خمي','جمع','سبت'];
+
+let calendarOpen = false;
+
+function buildCalendarMonths(){
+  const start = dateFromKey(START_DATE);
+  const end = dateFromKey(END_DATE);
+  const months = [];
+  let cur = new Date(start.getFullYear(), start.getMonth(), 1);
+  const endMonth = new Date(end.getFullYear(), end.getMonth(), 1);
+  while(cur <= endMonth){
+    const year = cur.getFullYear(), month = cur.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    months.push({ year, month, daysInMonth });
+    cur = new Date(year, month + 1, 1);
+  }
+  return months;
+}
+
+function escapeHtml(s){
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function uniqueId(){
+  return Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+}
+
+let state = null;
+
+function migrateEntries(){
+  let changed = false;
+  Object.values(state.days).forEach(list => {
+    list.forEach(e => {
+      if(!e.id){ e.id = uniqueId(); changed = true; }
+      if(e.note === undefined){ e.note = ''; changed = true; }
+    });
+  });
+  return changed;
+}
+
+async function loadState(){
+  try{
+    const res = await window.storage.get(STORAGE_KEY, false);
+    state = JSON.parse(res.value);
+    if(!state.customActions) state.customActions = [];
+    if(!state.overrides) state.overrides = {};
+    if(!state.sortMode) state.sortMode = { plus: 'default', minus: 'default' };
+    if(!state.manualOrder) state.manualOrder = { plus: [], minus: [] };
+    if(migrateEntries()) await saveState();
+  }catch(e){
+    state = { days: {}, customActions: [], overrides: {}, sortMode: { plus:'default', minus:'default' }, manualOrder: { plus:[], minus:[] } };
+    await window.storage.set(STORAGE_KEY, JSON.stringify(state), false);
+  }
+}
+
+function effectiveAction(a){
+  const o = state.overrides[a.id];
+  if(!o) return a;
+  const xp = (typeof o.xp === 'number') ? o.xp : a.xp;
+  return { ...a, label: o.label ?? a.label, xp, kind: xp >= 0 ? 'plus' : 'minus' };
+}
+
+function allActions(){
+  return [...ACTIONS.map(effectiveAction), ...state.customActions];
+}
+
+function computeSectionActions(kind, mode){
+  const items = allActions().filter(a => a.kind === kind);
+  if(mode === 'asc') return items.slice().sort((a,b) => a.xp - b.xp);
+  if(mode === 'desc') return items.slice().sort((a,b) => b.xp - a.xp);
+  if(mode === 'manual'){
+    const order = state.manualOrder[kind] || [];
+    return items.slice().sort((a,b) => {
+      const ia = order.indexOf(a.id), ib = order.indexOf(b.id);
+      return (ia === -1 ? Infinity : ia) - (ib === -1 ? Infinity : ib);
+    });
+  }
+  return items;
+}
+
+function getSectionActions(kind){
+  return computeSectionActions(kind, state.sortMode[kind]);
+}
+
+async function setSortMode(kind, mode){
+  if(mode === 'manual'){
+    const prevMode = state.sortMode[kind];
+    if(!state.manualOrder[kind] || state.manualOrder[kind].length === 0){
+      state.manualOrder[kind] = computeSectionActions(kind, prevMode === 'manual' ? 'default' : prevMode).map(a => a.id);
+    }
+  }
+  state.sortMode[kind] = mode;
+  await saveState();
+  render();
+}
+
+async function moveAction(kind, id, dir){
+  const currentIds = computeSectionActions(kind, 'manual').map(a => a.id);
+  const order = currentIds.slice();
+  const idx = order.indexOf(id);
+  const swapIdx = idx + dir;
+  if(idx === -1 || swapIdx < 0 || swapIdx >= order.length) return;
+  [order[idx], order[swapIdx]] = [order[swapIdx], order[idx]];
+  state.manualOrder[kind] = order;
+  await saveState();
+  render();
+}
+
+let addPanelOpen = false;
+let editingId = null;
+
+async function addCustomAction(label, xp){
+  const action = {
+    id: 'custom_' + Date.now(),
+    label,
+    xp,
+    emoji: xp >= 0 ? '✨' : '⚠️',
+    kind: xp >= 0 ? 'plus' : 'minus',
+    custom: true,
+  };
+  state.customActions.push(action);
+  await saveState();
+  addPanelOpen = false;
+  render();
+}
+
+async function removeCustomAction(id){
+  state.customActions = state.customActions.filter(a => a.id !== id);
+  await saveState();
+  render();
+}
+
+function isBuiltIn(id){
+  return ACTIONS.some(a => a.id === id);
+}
+
+async function saveEdit(id, label, xp){
+  const customIdx = state.customActions.findIndex(a => a.id === id);
+  if(customIdx !== -1){
+    state.customActions[customIdx].label = label;
+    state.customActions[customIdx].xp = xp;
+    state.customActions[customIdx].kind = xp >= 0 ? 'plus' : 'minus';
+  } else {
+    state.overrides[id] = { label, xp };
+  }
+  await saveState();
+  editingId = null;
+  render();
+}
+
+async function resetOverride(id){
+  delete state.overrides[id];
+  await saveState();
+  editingId = null;
+  render();
+}
+
+async function saveState(){
+  try{
+    await window.storage.set(STORAGE_KEY, JSON.stringify(state), false);
+  }catch(e){
+    console.error('تعذر الحفظ', e);
+  }
+}
+
+function getTodayEntries(){
+  const k = todayKey();
+  if(!state.days[k]) state.days[k] = [];
+  return state.days[k];
+}
+
+function phaseInfo(){
+  const start = dateFromKey(START_DATE);
+  const today = new Date(); today.setHours(0,0,0,0);
+  const elapsed = daysBetween(start, today); // 0-indexed; negative if before start
+  const dayNum = elapsed + 1;
+
+  if(dayNum < 1){
+    return { notStarted:true, daysUntilStart: 1 - dayNum, dayNum: 0, currentPhaseIdx: -1, dayInPhase: 0, finished:false };
+  }
+  if(dayNum > TOTAL_DAYS){
+    return { notStarted:false, finished:true, dayNum, currentPhaseIdx: PHASES.length-1, dayInPhase: PHASES[PHASES.length-1].days };
+  }
+  let cursor = 0, currentPhaseIdx = PHASES.length - 1, dayInPhase = PHASES[PHASES.length-1].days;
+  for(let i=0;i<PHASES.length;i++){
+    if(dayNum <= cursor + PHASES[i].days){
+      currentPhaseIdx = i;
+      dayInPhase = dayNum - cursor;
+      break;
+    }
+    cursor += PHASES[i].days;
+  }
+  return { notStarted:false, finished:false, dayNum, currentPhaseIdx, dayInPhase };
+}
+
+let editingNoteId = null;
+
+async function addEntry(action){
+  const entries = getTodayEntries();
+  entries.push({ id: uniqueId(), aid: action.id, label: action.label, xp: action.xp, ts: Date.now(), note: '' });
+  await saveState();
+  render();
+}
+
+async function undoLast(){
+  const entries = getTodayEntries();
+  if(entries.length === 0) return;
+  entries.pop();
+  await saveState();
+  render();
+}
+
+function findTodayEntry(id){
+  return getTodayEntries().find(e => e.id === id);
+}
+
+async function saveNote(id, text){
+  const entry = findTodayEntry(id);
+  if(entry) entry.note = text;
+  await saveState();
+  editingNoteId = null;
+  render();
+}
+
+function fmtTime(ts){
+  const d = new Date(ts);
+  return d.toLocaleTimeString('ar', { hour:'2-digit', minute:'2-digit' });
+}
+
+function last7Days(){
+  const out = [];
+  for(let i=6;i>=0;i--){
+    const d = new Date();
+    d.setDate(d.getDate()-i);
+    const k = todayKey(d);
+    const entries = state.days[k] || [];
+    const total = entries.reduce((s,e)=>s+e.xp,0);
+    out.push({ key:k, label: d.toLocaleDateString('ar', { weekday:'short' }), total });
+  }
+  return out;
+}
+
+function render(){
+  const app = document.getElementById('app');
+  const { notStarted, daysUntilStart, dayNum, currentPhaseIdx, dayInPhase, finished } = phaseInfo();
+  const todayEntries = getTodayEntries();
+  const totalToday = todayEntries.reduce((s,e)=>s+e.xp,0);
+  const goalPct = Math.max(0, Math.min(100, (totalToday/DAILY_GOAL)*100));
+  const goalReached = totalToday >= DAILY_GOAL;
+  const hist = last7Days();
+  const maxAbs = Math.max(...hist.map(h=>Math.abs(h.total)), DAILY_GOAL);
+
+  const phaseHud = PHASES.map((p,i)=>{
+    let pct = 0;
+    if(notStarted) pct = 0;
+    else if(i < currentPhaseIdx || finished) pct = 100;
+    else if(i === currentPhaseIdx) pct = Math.max(4, Math.min(100, (dayInPhase/p.days)*100));
+    const color = notStarted ? 'var(--panel-2)' : ((i < currentPhaseIdx || finished) ? 'var(--green)' : (i===currentPhaseIdx ? 'var(--gold)' : 'var(--panel-2)'));
+    return `<div class="phase-seg" style="flex:${p.days}">
+      <div class="fill" style="width:${pct}%; background:${color}"></div>
+    </div>`;
+  }).join('');
+
+  const phaseLabel = notStarted
+    ? `يبدأ التحدي بعد ${daysUntilStart === 1 ? 'يوم واحد' : daysUntilStart + ' أيام'}`
+    : finished
+    ? 'انتهت المراحل الثلاث 🏁'
+    : `${PHASES[currentPhaseIdx].name} — يوم ${dayInPhase} من ${PHASES[currentPhaseIdx].days}`;
+
+  const subtitleText = notStarted
+    ? `يبدأ التحدي في ١٧/٧ وينتهي في ٣١/١٢ — يمكن تسجيل الإجراءات من الآن`
+    : (finished ? 'انتهت الرحلة — يمكن الاطلاع على النتيجة النهائية' : `اليوم رقم ${dayNum} من ${TOTAL_DAYS} إجمالًا`);
+
+  const logHtml = todayEntries.length === 0
+    ? `<div class="log-empty">لم يُسجَّل أي إجراء اليوم بعد</div>`
+    : todayEntries.slice().reverse().map(e => `
+      <div class="log-item-wrap">
+        <div class="log-item">
+          <div class="l-left">
+            <span>${escapeHtml(e.label)}</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span class="l-time">${fmtTime(e.ts)}</span>
+            <span class="l-xp ${e.xp>=0?'pos':'minus'}">${e.xp>=0?'+':''}${e.xp}</span>
+          </div>
+        </div>
+        ${e.note ? `<div class="log-note">${escapeHtml(e.note)}</div>` : ''}
+        ${editingNoteId === e.id ? `
+          <div class="note-editor">
+            <textarea id="noteText-${e.id}" placeholder="اكتب هنا أي تفاصيل تريد إضافتها عن هذا الإجراء...">${escapeHtml(e.note || '')}</textarea>
+            <div class="actions-row">
+              <button class="cancel-btn" data-cancel-note="${e.id}">إلغاء</button>
+              <button class="save-btn" data-save-note="${e.id}">حفظ الملاحظة</button>
+            </div>
+          </div>
+        ` : `<button class="note-toggle" data-open-note="${e.id}">${e.note ? '✎ تعديل الملاحظة' : '📝 إضافة ملاحظة'}</button>`}
+      </div>
+    `).join('');
+
+  const histHtml = hist.map(h => {
+    const heightPct = Math.max(4, (Math.abs(h.total)/maxAbs)*100);
+    const cls = h.total > 0 ? 'pos' : (h.total < 0 ? 'neg' : '');
+    return `<div class="hist-col">
+      <div class="hist-bar ${cls}" style="height:${heightPct}%"></div>
+      <div class="hist-day">${h.label}</div>
+    </div>`;
+  }).join('');
+
+  app.innerHTML = `
+    <div class="title"><span class="mark">⚡</span> سجل XP اليومي</div>
+    <div class="subtitle">${subtitleText}</div>
+
+    <div class="phase-hud">${phaseHud}</div>
+    <div class="phase-labels"><b>${phaseLabel}</b><span>${TOTAL_DAYS} يوم</span></div>
+
+    <div class="card">
+      <div class="xp-row">
+        <div>
+          <div class="xp-today ${totalToday>=0?'pos':'neg'}">${totalToday>=0?'+':''}${totalToday}</div>
+        </div>
+        <div class="xp-goal-label">الهدف: ${DAILY_GOAL} XP</div>
+      </div>
+      <div class="bar-track"><div class="bar-fill ${goalReached?'done':''}" style="width:${goalPct}%"></div></div>
+    </div>
+
+    ${['plus','minus'].map(kind => {
+      const sectionActions = getSectionActions(kind);
+      const mode = state.sortMode[kind];
+      const title = kind === 'plus' ? '🟢 الإنجازات ⭐' : '🔴 المخالفات ⚠️';
+      const btnsHtml = sectionActions.map(a => `
+        <button class="act-btn ${a.kind} ${a.wide?'wide':''}" data-id="${a.id}">
+          ${a.custom ? `<span class="del-x" data-del="${a.id}">✕</span>` : ''}
+          <span class="edit-pencil" data-edit="${a.id}">✎</span>
+          <span class="emoji">${a.emoji}</span>
+          <span>${a.label}</span>
+          <span class="xp">${a.xp>0?'+':''}${a.xp} XP</span>
+          ${mode === 'manual' ? `
+            <span class="order-arrows">
+              <button class="arrow-btn" data-move-kind="${kind}" data-move-id="${a.id}" data-move-dir="-1">▲</button>
+              <button class="arrow-btn" data-move-kind="${kind}" data-move-id="${a.id}" data-move-dir="1">▼</button>
+            </span>` : ''}
+        </button>
+      `).join('');
+      return `
+      <div class="section-header">
+        <h3 class="section-title ${kind}">${title}</h3>
+        <div class="sort-controls">
+          <button class="sort-btn ${mode==='asc'?'active':''}" data-sort-kind="${kind}" data-sort-mode="asc">تصاعديًا</button>
+          <button class="sort-btn ${mode==='desc'?'active':''}" data-sort-kind="${kind}" data-sort-mode="desc">تنازليًا</button>
+          <button class="sort-btn ${mode==='manual'?'active':''}" data-sort-kind="${kind}" data-sort-mode="manual">ترتيب يدوي</button>
+        </div>
+      </div>
+      <div class="actions">${btnsHtml}</div>
+      `;
+    }).join('')}
+
+    <button class="act-btn add-new wide" id="openAddPanel" style="width:100%; margin-bottom:16px;">
+      <span class="emoji">➕</span>
+      <span>أضف مهمة جديدة</span>
+    </button>
+
+    ${addPanelOpen ? `
+    <div class="add-panel">
+      <input type="text" id="newLabel" placeholder="اسم المهمة (مثال: قراءة مقال تقني)" maxlength="40">
+      <div class="row">
+        <input type="number" id="newXp" placeholder="XP" value="10">
+        <div class="add-hint">يُستخدم رقم سالب إذا كانت المهمة تُنقص نقاط الخبرة (مثال: -15)</div>
+      </div>
+      <div class="actions-row">
+        <button class="cancel-btn" id="cancelAdd">إلغاء</button>
+        <button class="save-btn" id="saveAdd">حفظ المهمة</button>
+      </div>
+    </div>` : ''}
+
+    ${editingId ? (() => {
+      const target = allActions().find(a => a.id === editingId);
+      if(!target) return '';
+      return `
+      <div class="add-panel">
+        <input type="text" id="editLabel" value="${target.label}" maxlength="40">
+        <div class="row">
+          <input type="number" id="editXp" value="${target.xp}">
+          <div class="add-hint">عدّل اسم المهمة، ويمكن أيضًا تعديل قيمة نقاط الخبرة</div>
+        </div>
+        <div class="actions-row">
+          ${isBuiltIn(editingId) ? `<button class="reset-link" id="resetEdit">استعادة الاسم الافتراضي</button>` : ''}
+          <button class="cancel-btn" id="cancelEdit">إلغاء</button>
+          <button class="save-btn" id="saveEditBtn">حفظ التعديل</button>
+        </div>
+      </div>`;
+    })() : ''}
+
+    <div class="card">
+      <div class="log-header">
+        <h3>سجل اليوم</h3>
+        <button class="undo" id="undoBtn" ${todayEntries.length===0?'disabled':''}>↩ تراجع عن آخر إجراء</button>
+      </div>
+      <div class="log-list">${logHtml}</div>
+    </div>
+
+    <div class="card">
+      <div class="log-header"><h3>آخر ٧ أيام</h3></div>
+      <div class="history">${histHtml}</div>
+    </div>
+
+    <div class="card">
+      <button class="cal-toggle" id="calToggle">${calendarOpen ? 'إخفاء التقويم الكامل' : 'عرض التقويم الكامل'}</button>
+      ${calendarOpen ? `
+      <div class="calendar">
+        ${buildCalendarMonths().map(m => {
+          const start = dateFromKey(START_DATE);
+          const end = dateFromKey(END_DATE);
+          const todayStr = todayKey();
+          const firstWeekday = new Date(m.year, m.month, 1).getDay();
+          const leadingBlanks = Array.from({length: firstWeekday}).map(() => `<div class="cal-day oor"></div>`).join('');
+          const dayCells = Array.from({length: m.daysInMonth}).map((_, i) => {
+            const dayNum = i + 1;
+            const dateObj = new Date(m.year, m.month, dayNum);
+            const dateObj0 = new Date(m.year, m.month, dayNum); dateObj0.setHours(0,0,0,0);
+            const key = todayKey(dateObj);
+            const inRange = dateObj0 >= start && dateObj0 <= end;
+            const isToday = key === todayStr;
+            if(!inRange){
+              return `<div class="cal-day oor"><span class="cal-daynum">${dayNum}</span></div>`;
+            }
+            const entries = state.days[key] || [];
+            const total = entries.reduce((s,e)=>s+e.xp,0);
+            const cls = total >= DAILY_GOAL ? 'goal' : (total > 0 ? 'partial' : (total < 0 ? 'neg' : 'zero'));
+            return `<div class="cal-day ${cls} ${isToday?'today':''}">
+              <span class="cal-daynum">${dayNum}</span>
+              <span class="cal-xp">${total===0?'0':(total>0?'+':'')+total}</span>
+            </div>`;
+          }).join('');
+          return `
+          <div class="cal-month">
+            <div class="cal-month-title">${MONTH_NAMES[m.month]} ${m.year}</div>
+            <div class="cal-weekdays">${WEEKDAY_SHORT.map(w=>`<span>${w}</span>`).join('')}</div>
+            <div class="cal-grid">${leadingBlanks}${dayCells}</div>
+          </div>`;
+        }).join('')}
+        <div class="cal-legend">
+          <span><span class="dot" style="background: var(--green)"></span>تحقيق الهدف اليومي (١٠٠ فأكثر)</span>
+          <span><span class="dot" style="background: var(--gold)"></span>نقاط موجبة دون الهدف</span>
+          <span><span class="dot" style="background: var(--red)"></span>نقاط سالبة</span>
+        </div>
+      </div>` : ''}
+    </div>
+
+    <div class="footnote">البيانات محفوظة تلقائيًا على هذا الجهاز</div>
+  `;
+
+  allActions().forEach(a => {
+    const btn = app.querySelector(`[data-id="${a.id}"]`);
+    if(btn) btn.addEventListener('click', (ev) => {
+      if(ev.target.closest('.del-x') || ev.target.closest('.edit-pencil') || ev.target.closest('.order-arrows')) return;
+      addEntry(a);
+    });
+  });
+  app.querySelectorAll('[data-del]').forEach(x => {
+    x.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      removeCustomAction(x.getAttribute('data-del'));
+    });
+  });
+  app.querySelectorAll('[data-edit]').forEach(x => {
+    x.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      editingId = x.getAttribute('data-edit');
+      addPanelOpen = false;
+      editingNoteId = null;
+      render();
+    });
+  });
+  app.querySelectorAll('[data-sort-kind]').forEach(x => {
+    x.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      setSortMode(x.getAttribute('data-sort-kind'), x.getAttribute('data-sort-mode'));
+    });
+  });
+  app.querySelectorAll('[data-move-id]').forEach(x => {
+    x.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      moveAction(x.getAttribute('data-move-kind'), x.getAttribute('data-move-id'), parseInt(x.getAttribute('data-move-dir'), 10));
+    });
+  });
+  app.querySelectorAll('[data-open-note]').forEach(x => {
+    x.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      editingNoteId = x.getAttribute('data-open-note');
+      addPanelOpen = false;
+      editingId = null;
+      render();
+    });
+  });
+  app.querySelectorAll('[data-cancel-note]').forEach(x => {
+    x.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      editingNoteId = null;
+      render();
+    });
+  });
+  app.querySelectorAll('[data-save-note]').forEach(x => {
+    x.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      const id = x.getAttribute('data-save-note');
+      const ta = document.getElementById(`noteText-${id}`);
+      saveNote(id, ta ? ta.value.trim() : '');
+    });
+  });
+  const undoBtn = document.getElementById('undoBtn');
+  if(undoBtn) undoBtn.addEventListener('click', undoLast);
+
+  const openBtn = document.getElementById('openAddPanel');
+  if(openBtn) openBtn.addEventListener('click', () => { addPanelOpen = true; editingId = null; editingNoteId = null; render(); });
+  const cancelBtn = document.getElementById('cancelAdd');
+  if(cancelBtn) cancelBtn.addEventListener('click', () => { addPanelOpen = false; render(); });
+  const saveBtn = document.getElementById('saveAdd');
+  if(saveBtn) saveBtn.addEventListener('click', () => {
+    const labelEl = document.getElementById('newLabel');
+    const xpEl = document.getElementById('newXp');
+    const label = labelEl.value.trim();
+    const xp = parseInt(xpEl.value, 10);
+    if(!label || isNaN(xp) || xp === 0) return;
+    addCustomAction(label, xp);
+  });
+
+  const cancelEditBtn = document.getElementById('cancelEdit');
+  if(cancelEditBtn) cancelEditBtn.addEventListener('click', () => { editingId = null; render(); });
+  const resetEditBtn = document.getElementById('resetEdit');
+  if(resetEditBtn) resetEditBtn.addEventListener('click', () => resetOverride(editingId));
+  const saveEditBtn = document.getElementById('saveEditBtn');
+  if(saveEditBtn) saveEditBtn.addEventListener('click', () => {
+    const labelEl = document.getElementById('editLabel');
+    const xpEl = document.getElementById('editXp');
+    const label = labelEl.value.trim();
+    const xp = parseInt(xpEl.value, 10);
+    if(!label || isNaN(xp) || xp === 0) return;
+    saveEdit(editingId, label, xp);
+  });
+
+  const calToggle = document.getElementById('calToggle');
+  if(calToggle) calToggle.addEventListener('click', () => { calendarOpen = !calendarOpen; render(); });
+}
+
+(async function init(){
+  await loadState();
+  render();
+})();
+</script>
+</body>
+</html>
