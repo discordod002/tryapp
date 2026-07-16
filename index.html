@@ -333,6 +333,26 @@
     color: var(--text); font-family: var(--font-mono); font-weight:700;
   }
 
+  /* Thesis progress tracker */
+  .progress-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:8px; flex-wrap:wrap; }
+  .progress-header h3{ margin:0; font-size:15px; }
+  .progress-overall{ font-family: var(--font-mono); font-weight:800; color: var(--gold); font-size:13px; }
+  .progress-sections{ display:flex; flex-direction:column; gap:10px; }
+  .progress-section{ border:1px solid var(--line); border-radius:12px; overflow:hidden; background: var(--panel-2); }
+  .progress-section-header{
+    width:100%; display:flex; justify-content:space-between; align-items:center; gap:8px;
+    background:none; border:none; padding:10px 12px; cursor:pointer; color: var(--text);
+    font-family: var(--font-display); font-size:13px; font-weight:700; text-align:right;
+  }
+  .progress-section-pct{ font-family: var(--font-mono); font-size:11px; color: var(--muted); font-weight:700; white-space:nowrap; }
+  .progress-section-body{ padding: 10px 12px 12px; border-top:1px solid var(--line); display:flex; flex-direction:column; gap:10px; }
+  .progress-item{ display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer; }
+  .progress-item input[type="checkbox"]{ width:16px; height:16px; accent-color: var(--gold); cursor:pointer; flex-shrink:0; }
+  .progress-group{ display:flex; flex-direction:column; gap:6px; }
+  .progress-group-title{ font-size:12px; font-weight:800; color: var(--text); }
+  .progress-group-pct{ font-family: var(--font-mono); font-weight:600; color: var(--muted); font-size:11px; }
+  .progress-group-items{ display:grid; grid-template-columns: 1fr 1fr; gap:4px 10px; }
+
   /* Login screen */
   #loginScreen{ text-align:center; padding-top: 60px; }
   #loginScreen .login-top{ display:flex; justify-content:flex-end; margin-bottom:20px; }
@@ -489,6 +509,126 @@ const LEVEL_TITLES = [
 ];
 const ORDINAL_PHASE_NAMES = ['الأولى','الثانية','الثالثة'];
 
+/* ---------- Thesis progress tracker structure ---------- */
+const THESIS_STRUCTURE = [
+  { id:'sec1', title:'القسم الأول: المقدمة', type:'flat', items:[
+     {id:'s1_1', label:'التمهيد'},
+     {id:'s1_2', label:'أسباب اختيار الموضوع'},
+     {id:'s1_3', label:'مشكلة البحث'},
+     {id:'s1_4', label:'أهداف البحث'},
+     {id:'s1_5', label:'أهمية البحث'},
+     {id:'s1_6', label:'منهج البحث'},
+     {id:'s1_7', label:'الدراسات السابقة'},
+     {id:'s1_8', label:'هيكل البحث'},
+  ]},
+  { id:'sec2', title:'القسم الثاني: الفصل الأول', type:'flat', items:[
+     {id:'s2_1', label:'المبحث الأول'},
+     {id:'s2_2', label:'المبحث الثاني'},
+     {id:'s2_3', label:'المبحث الثالث'},
+     {id:'s2_4', label:'المبحث الرابع'},
+  ]},
+  { id:'sec3', title:'القسم الثالث: الفصل الثاني', type:'nested', groups:[
+     {id:'s3_g1', label:'المبحث الأول', count:8},
+     {id:'s3_g2', label:'المبحث الثاني', count:12},
+     {id:'s3_g3', label:'المبحث الثالث', count:11},
+     {id:'s3_g4', label:'المبحث الرابع', count:9},
+  ]},
+  { id:'sec4', title:'القسم الرابع: الفصل الثالث', type:'nested', groups:[
+     {id:'s4_g1', label:'المبحث الأول', count:10},
+     {id:'s4_g2', label:'المبحث الثاني', count:14},
+  ]},
+  { id:'sec5', title:'القسم الخامس: الخاتمة', type:'flat', items:[
+     {id:'s5_1', label:'النتائج'},
+     {id:'s5_2', label:'التوصيات'},
+  ]},
+  { id:'sec6', title:'القسم السادس: أخرى', type:'flat', items:[
+     {id:'s6_1', label:'الغلاف'},
+     {id:'s6_2', label:'التصميم'},
+     {id:'s6_3', label:'الملخص'},
+     {id:'s6_4', label:'قائمة المصادر والمراجع'},
+     {id:'s6_5', label:'الفهارس'},
+     {id:'s6_6', label:'البيان'},
+     {id:'s6_7', label:'العرض التقديمي'},
+  ]},
+];
+
+let progressOpenSections = {};
+
+function sectionLeafIds(section){
+  if(section.type === 'flat') return section.items.map(i => i.id);
+  let ids = [];
+  section.groups.forEach(g => {
+    for(let i=1;i<=g.count;i++) ids.push(`${g.id}_m${i}`);
+  });
+  return ids;
+}
+
+function sectionProgress(section){
+  const ids = sectionLeafIds(section);
+  const checked = ids.filter(id => state.progress[id]).length;
+  return { checked, total: ids.length, pct: ids.length ? Math.round(checked/ids.length*100) : 0 };
+}
+
+function overallProgress(){
+  let checked = 0, total = 0;
+  THESIS_STRUCTURE.forEach(sec => {
+    const ids = sectionLeafIds(sec);
+    total += ids.length;
+    checked += ids.filter(id => state.progress[id]).length;
+  });
+  return { checked, total, pct: total ? Math.round(checked/total*100) : 0 };
+}
+
+async function toggleProgressItem(id){
+  if(state.progress[id]) delete state.progress[id];
+  else state.progress[id] = true;
+  await saveState();
+  render();
+}
+
+function renderProgressSection(section){
+  const prog = sectionProgress(section);
+  const isOpen = !!progressOpenSections[section.id];
+  let bodyHtml = '';
+  if(section.type === 'flat'){
+    bodyHtml = section.items.map(item => `
+      <label class="progress-item">
+        <input type="checkbox" data-progress-id="${item.id}" ${state.progress[item.id] ? 'checked' : ''}>
+        <span>${escapeHtml(item.label)}</span>
+      </label>
+    `).join('');
+  } else {
+    bodyHtml = section.groups.map(g => {
+      const gIds = [];
+      for(let i=1;i<=g.count;i++) gIds.push(`${g.id}_m${i}`);
+      const gChecked = gIds.filter(id => state.progress[id]).length;
+      const gPct = Math.round(gChecked/g.count*100);
+      return `
+      <div class="progress-group">
+        <div class="progress-group-title">${escapeHtml(g.label)} <span class="progress-group-pct">(${gChecked}/${g.count} — ${gPct}%)</span></div>
+        <div class="progress-group-items">
+          ${gIds.map((id, idx) => `
+            <label class="progress-item">
+              <input type="checkbox" data-progress-id="${id}" ${state.progress[id] ? 'checked' : ''}>
+              <span>مسألة ${idx+1}</span>
+            </label>
+          `).join('')}
+        </div>
+      </div>
+      `;
+    }).join('');
+  }
+  return `
+  <div class="progress-section">
+    <button class="progress-section-header" data-progress-toggle="${section.id}">
+      <span class="progress-section-title">${section.title}</span>
+      <span class="progress-section-pct">${prog.pct}% (${prog.checked}/${prog.total}) ${isOpen ? '▲' : '▼'}</span>
+    </button>
+    ${isOpen ? `<div class="progress-section-body">${bodyHtml}</div>` : ''}
+  </div>
+  `;
+}
+
 function todayKey(d = new Date()){
   const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
   return `${y}-${m}-${day}`;
@@ -583,9 +723,10 @@ async function loadState(){
     if(!state.overrides) state.overrides = {};
     if(!state.sortMode) state.sortMode = { plus: 'default', minus: 'default' };
     if(!state.manualOrder) state.manualOrder = { plus: [], minus: [] };
+    if(!state.progress) state.progress = {};
     if(migrateEntries()) await saveState();
   }catch(e){
-    state = { days: {}, customActions: [], overrides: {}, sortMode: { plus:'default', minus:'default' }, manualOrder: { plus:[], minus:[] } };
+    state = { days: {}, customActions: [], overrides: {}, sortMode: { plus:'default', minus:'default' }, manualOrder: { plus:[], minus:[] }, progress: {} };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }
 }
@@ -1205,6 +1346,18 @@ function render(){
         <div class="daily-message">${dailyMessage({ notStarted, daysUntilStart, finished, dayNum, currentPhaseIdx, dayInPhase })}</div>
       </div>
 
+      <div class="content-block">
+        <div class="card">
+          <div class="progress-header">
+            <h3>📈 نسبة التقدم</h3>
+            <span class="progress-overall">${overallProgress().pct}% (${overallProgress().checked}/${overallProgress().total})</span>
+          </div>
+          <div class="progress-sections">
+            ${THESIS_STRUCTURE.map(sec => renderProgressSection(sec)).join('')}
+          </div>
+        </div>
+      </div>
+
     </div>
   `;
 
@@ -1314,6 +1467,16 @@ function render(){
   });
   app.querySelectorAll('[data-cal-day]').forEach(x => {
     x.addEventListener('click', () => viewDate(x.getAttribute('data-cal-day')));
+  });
+  app.querySelectorAll('[data-progress-id]').forEach(cb => {
+    cb.addEventListener('change', () => toggleProgressItem(cb.getAttribute('data-progress-id')));
+  });
+  app.querySelectorAll('[data-progress-toggle]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-progress-toggle');
+      progressOpenSections[id] = !progressOpenSections[id];
+      render();
+    });
   });
 
   const undoBtn = document.getElementById('undoBtn');
