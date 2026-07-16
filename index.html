@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>سجل XP</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Tajawal:wght@400;500;700;900&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   :root{
@@ -21,6 +21,7 @@
     --red: #ff6b78;
     --font-display: 'Tajawal', sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
+    --font-title: 'Tajawal', sans-serif;
   }
   [data-theme="light"]{
     --bg: #f4f2fa;
@@ -33,6 +34,62 @@
     --gold-dim: #ecd9a0;
     --green: #1f9d5c;
     --red: #d1414f;
+  }
+
+  /* ---------- Design theme: Islamic (احترافي أخضر وذهبي) ---------- */
+  [data-design="islamic"][data-theme="dark"]{
+    --bg: #0c1a14;
+    --panel: #122a20;
+    --panel-2: #193a2b;
+    --line: #2c5240;
+    --text: #eef6ef;
+    --muted: #93b3a1;
+    --gold: #d4af37;
+    --gold-dim: #6b5a1f;
+    --green: #4fae7a;
+    --red: #d9707a;
+    --font-title: 'Amiri', serif;
+  }
+  [data-design="islamic"][data-theme="light"]{
+    --bg: #faf6ec;
+    --panel: #ffffff;
+    --panel-2: #f1ead9;
+    --line: #ddd0ad;
+    --text: #1f3325;
+    --muted: #7a7060;
+    --gold: #a9822b;
+    --gold-dim: #e8d9ad;
+    --green: #1f7a4c;
+    --red: #b23a3a;
+    --font-title: 'Amiri', serif;
+  }
+
+  /* ---------- Design theme: Purple (لافندر وأبيض وأسود وزهري) ---------- */
+  [data-design="purple"][data-theme="dark"]{
+    --bg: #1a1225;
+    --panel: #241a33;
+    --panel-2: #2f2140;
+    --line: #4a3660;
+    --text: #f4eefb;
+    --muted: #ac98c8;
+    --gold: #e8a0c4;
+    --gold-dim: #7a4a63;
+    --green: #a8d8bd;
+    --red: #ef6f9e;
+    --font-title: 'Tajawal', sans-serif;
+  }
+  [data-design="purple"][data-theme="light"]{
+    --bg: #faf6ff;
+    --panel: #ffffff;
+    --panel-2: #f3ecfc;
+    --line: #e0d0f0;
+    --text: #241833;
+    --muted: #8a7a9c;
+    --gold: #c060a0;
+    --gold-dim: #f0c8e0;
+    --green: #4a9d6e;
+    --red: #d1417a;
+    --font-title: 'Tajawal', sans-serif;
   }
   *{ box-sizing: border-box; }
   body{
@@ -58,11 +115,17 @@
     width:30px; height:30px; border-radius:50%; cursor:pointer; font-size:14px;
     display:flex; align-items:center; justify-content:center; flex-shrink:0;
   }
+  .design-select{
+    background: var(--panel-2); border:1px solid var(--line); color: var(--text);
+    border-radius: 8px; padding: 5px 6px; font-family: var(--font-display);
+    font-size: 11px; cursor:pointer; flex-shrink:0;
+  }
 
   /* Header */
   .title{
     font-size: 22px; font-weight: 900; letter-spacing: .5px;
     display:flex; align-items:center; gap:8px; margin-bottom:2px;
+    font-family: var(--font-title);
   }
   .title span.mark{ color: var(--gold); }
   .subtitle{ color: var(--muted); font-size: 13px; margin-bottom: 18px; }
@@ -387,7 +450,7 @@
 
   /* Login screen */
   #loginScreen{ text-align:center; padding-top: 60px; }
-  #loginScreen .login-top{ display:flex; justify-content:flex-end; margin-bottom:20px; }
+  #loginScreen .login-top{ display:flex; justify-content:flex-end; gap:8px; margin-bottom:20px; }
   #loginScreen .login-title{ justify-content:center; }
   #loginScreen .login-sub{ color: var(--muted); font-size:13px; margin: 8px 0 30px; }
   #googleBtn{ display:flex; justify-content:center; }
@@ -407,6 +470,11 @@
 <body>
 <div class="wrap" id="loginScreen" style="display:none;">
   <div class="login-top">
+    <select class="design-select" id="designSelectLogin" title="نمط التصميم">
+      <option value="normal">🎨 عادي</option>
+      <option value="islamic">🕌 إسلامي</option>
+      <option value="purple">💜 بنفسجي</option>
+    </select>
     <button class="icon-toggle-btn" id="themeToggleBtnLogin" title="تبديل الوضع الداكن/الفاتح">☀️</button>
   </div>
   <div class="title login-title"><span class="mark">⚡</span> سجل XP اليومي</div>
@@ -424,6 +492,7 @@ const GOOGLE_CLIENT_ID = '1016686540026-po35tc94j0qggltej0pfitekp8jedec3.apps.go
 const AUTH_KEY = 'xp-tracker-auth-v1';
 const THEME_KEY = 'xp-tracker-theme';
 const LAYOUT_KEY = 'xp-tracker-layout';
+const DESIGN_KEY = 'xp-tracker-design';
 let currentUser = null;
 
 function parseJwt(token){
@@ -453,6 +522,25 @@ function toggleTheme(){
   applyTheme(next);
   const loginBtn = document.getElementById('themeToggleBtnLogin');
   if(loginBtn) loginBtn.textContent = next === 'light' ? '🌙' : '☀️';
+  if(state) render();
+}
+
+/* ---------- Design theme (عادي / إسلامي / بنفسجي) ---------- */
+let designMode = 'normal';
+function getStoredDesign(){
+  const saved = localStorage.getItem(DESIGN_KEY);
+  if(saved === 'normal' || saved === 'islamic' || saved === 'purple') return saved;
+  return 'normal';
+}
+function applyDesign(design){
+  designMode = design;
+  document.documentElement.setAttribute('data-design', design);
+}
+function changeDesign(design){
+  localStorage.setItem(DESIGN_KEY, design);
+  applyDesign(design);
+  const loginSelect = document.getElementById('designSelectLogin');
+  if(loginSelect) loginSelect.value = design;
   if(state) render();
 }
 
@@ -1204,6 +1292,7 @@ function render(){
   const lvl = levelInfo();
   const streakCount = computeStreak();
   const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  const currentDesign = designMode;
 
   const phaseHud = PHASES.map((p,i)=>{
     let pct = 0;
@@ -1277,6 +1366,11 @@ function render(){
     <div class="user-bar">
       <span class="u-name">${currentUser && currentUser.picture ? `<img src="${currentUser.picture}" alt="">` : ''}${escapeHtml(currentUser ? (currentUser.name || currentUser.email) : '')}</span>
       <span class="u-right">
+        <select class="design-select" id="designSelect" title="نمط التصميم">
+          <option value="normal" ${currentDesign==='normal'?'selected':''}>🎨 عادي</option>
+          <option value="islamic" ${currentDesign==='islamic'?'selected':''}>🕌 إسلامي</option>
+          <option value="purple" ${currentDesign==='purple'?'selected':''}>💜 بنفسجي</option>
+        </select>
         <button class="icon-toggle-btn" id="layoutToggleBtn" title="تبديل نمط العرض (عرضي/طولي)">${layoutMode === 'wide' ? '📱' : '💻'}</button>
         <button class="icon-toggle-btn" id="themeToggleBtn" title="تبديل الوضع الداكن/الفاتح">${isLight ? '🌙' : '☀️'}</button>
         <button class="signout-btn" id="signOutBtn">تسجيل الخروج</button>
@@ -1676,16 +1770,25 @@ function render(){
   if(themeBtn) themeBtn.addEventListener('click', toggleTheme);
   const layoutBtn = document.getElementById('layoutToggleBtn');
   if(layoutBtn) layoutBtn.addEventListener('click', toggleLayout);
+  const designSelect = document.getElementById('designSelect');
+  if(designSelect) designSelect.addEventListener('change', () => changeDesign(designSelect.value));
 }
 
 window.addEventListener('load', function(){
   applyTheme(getStoredTheme());
+  applyDesign(getStoredDesign());
   layoutMode = getStoredLayout();
 
   const loginThemeBtn = document.getElementById('themeToggleBtnLogin');
   if(loginThemeBtn){
     loginThemeBtn.textContent = document.documentElement.getAttribute('data-theme') === 'light' ? '🌙' : '☀️';
     loginThemeBtn.addEventListener('click', toggleTheme);
+  }
+
+  const loginDesignSelect = document.getElementById('designSelectLogin');
+  if(loginDesignSelect){
+    loginDesignSelect.value = designMode;
+    loginDesignSelect.addEventListener('change', () => changeDesign(loginDesignSelect.value));
   }
 
   const auth = getStoredAuth();
