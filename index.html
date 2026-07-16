@@ -352,6 +352,37 @@
   .progress-group-title{ font-size:12px; font-weight:800; color: var(--text); }
   .progress-group-pct{ font-family: var(--font-mono); font-weight:600; color: var(--muted); font-size:11px; }
   .progress-group-items{ display:grid; grid-template-columns: 1fr 1fr; gap:4px 10px; }
+  .progress-custom-list{ display:flex; flex-direction:column; gap:6px; }
+  .progress-custom-item{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .progress-custom-item .progress-item{ flex:1; }
+  .progress-custom-del{
+    background:none; border:none; color: var(--muted); cursor:pointer; font-size:12px; padding:2px 4px; flex-shrink:0;
+  }
+  .progress-custom-del:hover{ color: var(--red); }
+  .progress-add-btn{
+    width:100%; background: transparent; border:1px dashed var(--line); border-radius:10px;
+    color: var(--muted); font-family: var(--font-display); font-weight:700; font-size:13px;
+    padding: 10px; cursor:pointer; margin-top: 4px;
+  }
+  .progress-add-panel{
+    background: var(--panel); border:1px solid var(--line); border-radius:14px;
+    padding: 14px; margin-top:10px; display:flex; flex-direction:column; gap:10px;
+  }
+  .progress-add-panel input[type="text"]{
+    background: var(--panel-2); border:1px solid var(--line); border-radius:10px;
+    padding: 10px 12px; color: var(--text); font-family: var(--font-display); font-size:14px;
+  }
+  .progress-add-panel select{
+    background: var(--panel-2); border:1px solid var(--line); border-radius:10px;
+    padding: 10px 12px; color: var(--text); font-family: var(--font-display); font-size:13px;
+  }
+  .progress-add-panel .actions-row{ display:flex; gap:8px; justify-content:flex-end; }
+  .progress-add-panel button{
+    border-radius:10px; border:1px solid var(--line); padding: 9px 14px;
+    font-family: var(--font-display); font-weight:700; font-size: 13px; cursor:pointer;
+  }
+  .progress-add-panel .save-btn{ background: var(--gold); color:#241f0a; border-color: var(--gold); }
+  .progress-add-panel .cancel-btn{ background: transparent; color: var(--muted); }
 
   /* Login screen */
   #loginScreen{ text-align:center; padding-top: 60px; }
@@ -553,14 +584,18 @@ const THESIS_STRUCTURE = [
 ];
 
 let progressOpenSections = {};
+let progressAddPanelOpen = false;
 
 function sectionLeafIds(section){
-  if(section.type === 'flat') return section.items.map(i => i.id);
-  let ids = [];
-  section.groups.forEach(g => {
-    for(let i=1;i<=g.count;i++) ids.push(`${g.id}_m${i}`);
-  });
-  return ids;
+  const base = section.type === 'flat' ? section.items.map(i => i.id) : (() => {
+    let ids = [];
+    section.groups.forEach(g => {
+      for(let i=1;i<=g.count;i++) ids.push(`${g.id}_m${i}`);
+    });
+    return ids;
+  })();
+  const custom = (state.customProgress || []).filter(c => c.sectionId === section.id).map(c => c.id);
+  return [...base, ...custom];
 }
 
 function sectionProgress(section){
@@ -584,6 +619,28 @@ async function toggleProgressItem(id){
   else state.progress[id] = true;
   await saveState();
   render();
+}
+
+async function addCustomProgressItem(label, sectionId){
+  if(!state.customProgress) state.customProgress = [];
+  const id = 'cprog_' + uniqueId();
+  state.customProgress.push({ id, label, sectionId });
+  await saveState();
+  progressAddPanelOpen = false;
+  progressOpenSections[sectionId] = true;
+  render();
+}
+
+async function removeCustomProgressItem(id){
+  if(!confirm('هل تريد حذف هذا العنصر من قائمة التقدم؟')) return;
+  state.customProgress = (state.customProgress || []).filter(c => c.id !== id);
+  delete state.progress[id];
+  await saveState();
+  render();
+}
+
+function customItemsForSection(sectionId){
+  return (state.customProgress || []).filter(c => c.sectionId === sectionId);
 }
 
 function renderProgressSection(section){
@@ -618,13 +675,27 @@ function renderProgressSection(section){
       `;
     }).join('');
   }
+  const customItems = customItemsForSection(section.id);
+  const customHtml = customItems.length ? `
+    <div class="progress-custom-list">
+      ${customItems.map(c => `
+        <div class="progress-custom-item">
+          <label class="progress-item">
+            <input type="checkbox" data-progress-id="${c.id}" ${state.progress[c.id] ? 'checked' : ''}>
+            <span>${escapeHtml(c.label)}</span>
+          </label>
+          <button class="progress-custom-del" data-del-custom-progress="${c.id}" title="حذف العنصر">✕</button>
+        </div>
+      `).join('')}
+    </div>
+  ` : '';
   return `
   <div class="progress-section">
     <button class="progress-section-header" data-progress-toggle="${section.id}">
       <span class="progress-section-title">${section.title}</span>
       <span class="progress-section-pct">${prog.pct}% (${prog.checked}/${prog.total}) ${isOpen ? '▲' : '▼'}</span>
     </button>
-    ${isOpen ? `<div class="progress-section-body">${bodyHtml}</div>` : ''}
+    ${isOpen ? `<div class="progress-section-body">${bodyHtml}${customHtml}</div>` : ''}
   </div>
   `;
 }
@@ -724,9 +795,10 @@ async function loadState(){
     if(!state.sortMode) state.sortMode = { plus: 'default', minus: 'default' };
     if(!state.manualOrder) state.manualOrder = { plus: [], minus: [] };
     if(!state.progress) state.progress = {};
+    if(!state.customProgress) state.customProgress = [];
     if(migrateEntries()) await saveState();
   }catch(e){
-    state = { days: {}, customActions: [], overrides: {}, sortMode: { plus:'default', minus:'default' }, manualOrder: { plus:[], minus:[] }, progress: {} };
+    state = { days: {}, customActions: [], overrides: {}, sortMode: { plus:'default', minus:'default' }, manualOrder: { plus:[], minus:[] }, progress: {}, customProgress: [] };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }
 }
@@ -1355,6 +1427,19 @@ function render(){
           <div class="progress-sections">
             ${THESIS_STRUCTURE.map(sec => renderProgressSection(sec)).join('')}
           </div>
+          <button class="progress-add-btn" id="openProgressAdd">${progressAddPanelOpen ? '✕ إغلاق' : '➕ أضف عنصرًا جديدًا للتتبع'}</button>
+          ${progressAddPanelOpen ? `
+          <div class="progress-add-panel">
+            <input type="text" id="newProgressLabel" placeholder="اسم العنصر (مثال: مراجعة لغوية)" maxlength="60">
+            <select id="newProgressSection">
+              ${THESIS_STRUCTURE.map(sec => `<option value="${sec.id}">${sec.title}</option>`).join('')}
+            </select>
+            <div class="add-hint">سيُضاف العنصر كخانة اختيار مستقلة أسفل القسم الذي تختاره، ويمكن حذفه لاحقًا بالضغط على ✕ بجانبه</div>
+            <div class="actions-row">
+              <button class="cancel-btn" id="cancelProgressAdd">إلغاء</button>
+              <button class="save-btn" id="saveProgressAdd">حفظ العنصر</button>
+            </div>
+          </div>` : ''}
         </div>
       </div>
 
@@ -1478,6 +1563,12 @@ function render(){
       render();
     });
   });
+  app.querySelectorAll('[data-del-custom-progress]').forEach(btn => {
+    btn.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      removeCustomProgressItem(btn.getAttribute('data-del-custom-progress'));
+    });
+  });
 
   const undoBtn = document.getElementById('undoBtn');
   if(undoBtn) undoBtn.addEventListener('click', undoLast);
@@ -1519,6 +1610,20 @@ function render(){
 
   const calToggle = document.getElementById('calToggle');
   if(calToggle) calToggle.addEventListener('click', () => { calendarOpen = !calendarOpen; render(); });
+
+  const openProgressAddBtn = document.getElementById('openProgressAdd');
+  if(openProgressAddBtn) openProgressAddBtn.addEventListener('click', () => { progressAddPanelOpen = !progressAddPanelOpen; render(); });
+  const cancelProgressAddBtn = document.getElementById('cancelProgressAdd');
+  if(cancelProgressAddBtn) cancelProgressAddBtn.addEventListener('click', () => { progressAddPanelOpen = false; render(); });
+  const saveProgressAddBtn = document.getElementById('saveProgressAdd');
+  if(saveProgressAddBtn) saveProgressAddBtn.addEventListener('click', () => {
+    const labelEl = document.getElementById('newProgressLabel');
+    const sectionEl = document.getElementById('newProgressSection');
+    const label = labelEl.value.trim();
+    const sectionId = sectionEl.value;
+    if(!label || !sectionId) return;
+    addCustomProgressItem(label, sectionId);
+  });
 
   const signOutBtn = document.getElementById('signOutBtn');
   if(signOutBtn) signOutBtn.addEventListener('click', signOut);
