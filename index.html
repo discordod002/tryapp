@@ -22,6 +22,18 @@
     --font-display: 'Tajawal', sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
   }
+  [data-theme="light"]{
+    --bg: #f4f2fa;
+    --panel: #ffffff;
+    --panel-2: #eeeaf8;
+    --line: #ddd5ec;
+    --text: #221e33;
+    --muted: #726a8c;
+    --gold: #b9860a;
+    --gold-dim: #ecd9a0;
+    --green: #1f9d5c;
+    --red: #d1414f;
+  }
   *{ box-sizing: border-box; }
   body{
     margin:0;
@@ -30,8 +42,22 @@
     font-family: var(--font-display);
     padding: 20px 14px 60px;
     min-height: 100vh;
+    transition: background .2s ease, color .2s ease;
   }
-  .wrap{ max-width: 480px; margin: 0 auto; }
+  .wrap{ max-width: 480px; margin: 0 auto; transition: max-width .2s ease; }
+  .wrap.wide{ max-width: 1100px; }
+
+  /* Content area / columns for wide layout */
+  .content-area{ display:block; }
+  .wrap.wide .content-area{ column-count: 2; column-gap: 20px; }
+  .content-block{ break-inside: avoid; margin-bottom: 16px; }
+
+  /* Icon toggle buttons (theme / layout) */
+  .icon-toggle-btn{
+    background: var(--panel-2); border:1px solid var(--line); color: var(--text);
+    width:30px; height:30px; border-radius:50%; cursor:pointer; font-size:14px;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
 
   /* Header */
   .title{
@@ -65,7 +91,7 @@
     border: 1px solid var(--line);
     border-radius: 16px;
     padding: 18px;
-    margin-bottom: 16px;
+    margin-bottom: 0;
   }
   .xp-row{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:10px; }
   .xp-today{
@@ -87,7 +113,7 @@
 
   /* Action grid */
   .actions{
-    display:grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;
+    display:grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 0;
   }
   .act-btn{
     display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -149,7 +175,7 @@
   /* Add-action panel */
   .add-panel{
     background: var(--panel); border:1px solid var(--line); border-radius:14px;
-    padding: 14px; margin-bottom: 16px; display:flex; flex-direction:column; gap:10px;
+    padding: 14px; margin-top:12px; display:flex; flex-direction:column; gap:10px;
   }
   .add-panel input[type="text"], .add-panel input[type="number"]{
     background: var(--panel-2); border:1px solid var(--line); border-radius:10px;
@@ -167,8 +193,14 @@
   .add-hint{ color: var(--muted); font-size:11px; }
 
   /* Log */
-  .log-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .log-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px; }
   .log-header h3{ font-size: 14px; margin:0; color: var(--muted); font-weight:700; }
+  .log-day-nav{ display:flex; align-items:center; gap:8px; }
+  .daynav-btn{
+    background: var(--panel-2); border:1px solid var(--line); color: var(--text);
+    width:26px; height:26px; border-radius:8px; cursor:pointer; font-size:14px;
+  }
+  .daynav-btn:disabled{ opacity:.35; cursor:default; }
   .undo{ font-size:12px; color: var(--muted); background:none; border:none; cursor:pointer; text-decoration: underline; padding:0; }
   .undo:disabled{ opacity:.4; cursor:default; text-decoration:none; }
   .log-list{ display:flex; flex-direction:column; gap:6px; }
@@ -185,6 +217,10 @@
   .log-item .l-xp.minus{ color: var(--red); }
   .log-item-wrap{ background: var(--panel-2); border:1px solid var(--line); border-radius:10px; padding: 8px 12px; }
   .log-item-wrap .log-item{ background: none; border:none; padding:0; }
+  .entry-icon-btn{
+    background:none; border:none; color: var(--muted); cursor:pointer; font-size:13px; padding:2px;
+  }
+  .entry-icon-btn:hover{ color: var(--text); }
   .log-note{
     margin-top:6px; padding-top:6px; border-top:1px dashed var(--line);
     color: var(--text); font-size:12px; white-space: pre-wrap; line-height:1.6;
@@ -198,6 +234,14 @@
     background: var(--panel); border:1px solid var(--line); border-radius:10px;
     padding:10px; color: var(--text); font-family: var(--font-display); font-size:13px;
     min-height: 70px; resize: vertical;
+  }
+  .note-editor select{
+    background: var(--panel); border:1px solid var(--line); border-radius:10px;
+    padding:8px 10px; color: var(--text); font-family: var(--font-display); font-size:13px;
+  }
+  .note-editor input[type="text"], .note-editor input[type="number"]{
+    background: var(--panel); border:1px solid var(--line); border-radius:10px;
+    padding:9px 10px; color: var(--text); font-family: var(--font-display); font-size:13px;
   }
   .note-editor .actions-row{ display:flex; gap:8px; justify-content:flex-end; }
   .note-editor button{
@@ -213,7 +257,9 @@
   .hist-bar{ width:100%; border-radius:4px 4px 0 0; background: var(--gold-dim); min-height:2px; }
   .hist-bar.pos{ background: var(--green); }
   .hist-bar.neg{ background: var(--red); }
+  .hist-bar.is-today{ box-shadow: 0 0 0 2px var(--gold) inset; }
   .hist-day{ font-size: 10px; color: var(--muted); font-family: var(--font-mono); }
+  .hist-day.is-today{ color: var(--gold); font-weight:800; }
 
   /* Calendar */
   .cal-toggle{
@@ -234,19 +280,22 @@
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     background: var(--panel-2); gap:2px;
   }
-  .cal-day.oor{ background: transparent; border-color: transparent; opacity:.28; }
+  .cal-day:not(.oor){ cursor:pointer; }
+  .cal-day.oor{ background: transparent; border-color: transparent; opacity:.28; cursor:default; }
   .cal-day.zero{ background: var(--panel-2); }
   .cal-day.partial{ background: rgba(242,201,76,.14); border-color: rgba(242,201,76,.4); }
   .cal-day.goal{ background: rgba(110,231,168,.16); border-color: rgba(110,231,168,.4); }
   .cal-day.neg{ background: rgba(255,107,120,.16); border-color: rgba(255,107,120,.4); }
   .cal-day.today{ box-shadow: 0 0 0 2px var(--gold) inset; }
+  .cal-day.viewing{ box-shadow: 0 0 0 2px #5aa9e0 inset; }
+  .cal-day.today.viewing{ box-shadow: 0 0 0 2px var(--gold) inset, 0 0 0 4px #5aa9e0 inset; }
   .cal-daynum{ font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
   .cal-xp{ font-family: var(--font-mono); font-size: 10px; font-weight:700; }
   .cal-day.goal .cal-xp{ color: var(--green); }
   .cal-day.partial .cal-xp{ color: var(--gold); }
   .cal-day.neg .cal-xp{ color: var(--red); }
   .cal-day.zero .cal-xp{ color: var(--muted); }
-  .cal-legend{ display:flex; gap:14px; margin-top:8px; font-size:11px; color: var(--muted); }
+  .cal-legend{ display:flex; gap:14px; margin-top:8px; font-size:11px; color: var(--muted); flex-wrap:wrap; }
   .cal-legend .dot{ display:inline-block; width:9px; height:9px; border-radius:3px; margin-inline-end:4px; vertical-align:middle; }
 
   .loading{ text-align:center; color: var(--muted); padding: 60px 0; font-family: var(--font-mono); font-size:13px; }
@@ -285,16 +334,18 @@
   }
 
   /* Login screen */
-  #loginScreen{ text-align:center; padding-top: 90px; }
+  #loginScreen{ text-align:center; padding-top: 60px; }
+  #loginScreen .login-top{ display:flex; justify-content:flex-end; margin-bottom:20px; }
   #loginScreen .login-title{ justify-content:center; }
   #loginScreen .login-sub{ color: var(--muted); font-size:13px; margin: 8px 0 30px; }
   #googleBtn{ display:flex; justify-content:center; }
   .user-bar{
     display:flex; justify-content:space-between; align-items:center;
-    margin-bottom: 14px; font-size:12px; color: var(--muted);
+    margin-bottom: 14px; font-size:12px; color: var(--muted); gap:8px;
   }
   .user-bar .u-name{ display:flex; align-items:center; gap:6px; }
   .user-bar img{ width:20px; height:20px; border-radius:50%; }
+  .user-bar .u-right{ display:flex; align-items:center; gap:8px; }
   .user-bar .signout-btn{
     background:none; border:none; color: var(--muted); font-size:12px;
     text-decoration: underline; cursor:pointer; padding:0;
@@ -303,6 +354,9 @@
 </head>
 <body>
 <div class="wrap" id="loginScreen" style="display:none;">
+  <div class="login-top">
+    <button class="icon-toggle-btn" id="themeToggleBtnLogin" title="تبديل الوضع الداكن/الفاتح">☀️</button>
+  </div>
   <div class="title login-title"><span class="mark">⚡</span> سجل XP اليومي</div>
   <div class="login-sub">سجّل الدخول بحساب جوجل لتستخدم الموقع</div>
   <div id="googleBtn"></div>
@@ -316,6 +370,8 @@
 // ⚠️ عدّل هذا برقم الـ Client ID الخاص بك من Google Cloud Console
 const GOOGLE_CLIENT_ID = '1016686540026-po35tc94j0qggltej0pfitekp8jedec3.apps.googleusercontent.com';
 const AUTH_KEY = 'xp-tracker-auth-v1';
+const THEME_KEY = 'xp-tracker-theme';
+const LAYOUT_KEY = 'xp-tracker-layout';
 let currentUser = null;
 
 function parseJwt(token){
@@ -329,6 +385,36 @@ function parseJwt(token){
 
 function getStoredAuth(){
   try{ return JSON.parse(localStorage.getItem(AUTH_KEY)); }catch(e){ return null; }
+}
+
+/* ---------- Theme (dark/light) ---------- */
+function getStoredTheme(){
+  return localStorage.getItem(THEME_KEY) || 'dark';
+}
+function applyTheme(theme){
+  document.documentElement.setAttribute('data-theme', theme === 'light' ? 'light' : 'dark');
+}
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  const next = cur === 'light' ? 'dark' : 'light';
+  localStorage.setItem(THEME_KEY, next);
+  applyTheme(next);
+  const loginBtn = document.getElementById('themeToggleBtnLogin');
+  if(loginBtn) loginBtn.textContent = next === 'light' ? '🌙' : '☀️';
+  if(state) render();
+}
+
+/* ---------- Layout (wide/narrow) ---------- */
+function getStoredLayout(){
+  const saved = localStorage.getItem(LAYOUT_KEY);
+  if(saved === 'wide' || saved === 'narrow') return saved;
+  return window.innerWidth >= 900 ? 'wide' : 'narrow';
+}
+let layoutMode = 'narrow';
+function toggleLayout(){
+  layoutMode = layoutMode === 'wide' ? 'narrow' : 'wide';
+  localStorage.setItem(LAYOUT_KEY, layoutMode);
+  render();
 }
 
 function handleCredentialResponse(response){
@@ -362,6 +448,7 @@ function initGoogleButton(){
 async function showApp(user){
   currentUser = user;
   STORAGE_KEY = 'xp-tracker-state-v1-' + user.email;
+  viewingDateKey = todayKey();
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   await loadState();
@@ -414,9 +501,41 @@ PHASES.forEach(p => { p.days = daysBetween(dateFromKey(p.start), dateFromKey(p.e
 const TOTAL_DAYS = daysBetween(dateFromKey(START_DATE), dateFromKey(END_DATE)) + 1;
 
 const MONTH_NAMES = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const WEEKDAY_SHORT = ['أحد','إثن','ثلا','أرب','خمي','جمع','سبت'];
+// Monday-first weekday header
+const WEEKDAY_SHORT = ['إثن','ثلا','أرب','خمي','جمع','سبت','أحد'];
 
 let calendarOpen = false;
+
+// Currently viewed day in the log/top card (defaults to today; navigable)
+let viewingDateKey = todayKey();
+
+function clampDateKey(key){
+  if(key < START_DATE) return START_DATE;
+  if(key > END_DATE) return END_DATE;
+  return key;
+}
+function shiftViewingDate(delta){
+  const d = dateFromKey(viewingDateKey);
+  d.setDate(d.getDate()+delta);
+  viewingDateKey = clampDateKey(todayKey(d));
+  editingEntryId = null; editingNoteId = null;
+  render();
+}
+function jumpToToday(){
+  viewingDateKey = todayKey();
+  editingEntryId = null; editingNoteId = null;
+  render();
+}
+function viewDate(key){
+  if(key < START_DATE || key > END_DATE) return;
+  viewingDateKey = key;
+  editingEntryId = null; editingNoteId = null;
+  render();
+  setTimeout(()=>{
+    const el = document.getElementById('logCard');
+    if(el) el.scrollIntoView({behavior:'smooth', block:'start'});
+  }, 30);
+}
 
 function buildCalendarMonths(){
   const start = dateFromKey(START_DATE);
@@ -581,10 +700,12 @@ async function saveState(){
   }
 }
 
+function getEntriesFor(key){
+  if(!state.days[key]) state.days[key] = [];
+  return state.days[key];
+}
 function getTodayEntries(){
-  const k = todayKey();
-  if(!state.days[k]) state.days[k] = [];
-  return state.days[k];
+  return getEntriesFor(todayKey());
 }
 
 function phaseInfo(){
@@ -612,29 +733,48 @@ function phaseInfo(){
 }
 
 let editingNoteId = null;
+let editingEntryId = null;
 
 async function addEntry(action){
-  const entries = getTodayEntries();
+  const entries = getEntriesFor(viewingDateKey);
   entries.push({ id: uniqueId(), aid: action.id, label: action.label, xp: action.xp, ts: Date.now(), note: '' });
   await saveState();
-  await checkStreakBonus();
+  if(viewingDateKey === todayKey()) await checkStreakBonus();
   render();
 }
 
 async function undoLast(){
-  const entries = getTodayEntries();
+  const entries = getEntriesFor(viewingDateKey);
   if(entries.length === 0) return;
   entries.pop();
   await saveState();
   render();
 }
 
-function findTodayEntry(id){
-  return getTodayEntries().find(e => e.id === id);
+async function deleteEntry(key, id){
+  if(!confirm('هل تريد حذف هذا الإجراء من السجل؟')) return;
+  state.days[key] = (state.days[key] || []).filter(e => e.id !== id);
+  await saveState();
+  render();
+}
+
+async function saveEntryEdit(key, id, label, xp){
+  const entries = getEntriesFor(key);
+  const entry = entries.find(e => e.id === id);
+  if(!entry) return;
+  entry.label = label;
+  entry.xp = xp;
+  await saveState();
+  editingEntryId = null;
+  render();
+}
+
+function findEntry(key, id){
+  return getEntriesFor(key).find(e => e.id === id);
 }
 
 async function saveNote(id, text){
-  const entry = findTodayEntry(id);
+  const entry = findEntry(viewingDateKey, id);
   if(entry) entry.note = text;
   await saveState();
   editingNoteId = null;
@@ -648,13 +788,14 @@ function fmtTime(ts){
 
 function last7Days(){
   const out = [];
+  const todayK = todayKey();
   for(let i=6;i>=0;i--){
     const d = new Date();
     d.setDate(d.getDate()-i);
     const k = todayKey(d);
     const entries = state.days[k] || [];
     const total = entries.reduce((s,e)=>s+e.xp,0);
-    out.push({ key:k, label: d.toLocaleDateString('ar', { weekday:'short' }), total });
+    out.push({ key:k, label: d.toLocaleDateString('ar', { weekday:'short' }), total, isToday: k === todayK });
   }
   return out;
 }
@@ -748,17 +889,64 @@ function dailyMessage(info){
   return `اليوم ${dayNum} | تبقى ${daysLeft} ${daysLeft === 1 ? 'يوم' : 'أيام'} لإنهاء المرحلة ${phaseWord}`;
 }
 
+function renderLogList(key){
+  const entries = getEntriesFor(key);
+  if(entries.length === 0) return `<div class="log-empty">لم يُسجَّل أي إجراء في هذا اليوم</div>`;
+  return entries.slice().reverse().map(e => `
+    <div class="log-item-wrap">
+      <div class="log-item">
+        <div class="l-left">
+          <span>${escapeHtml(e.label)}</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="l-time">${fmtTime(e.ts)}</span>
+          <span class="l-xp ${e.xp>=0?'pos':'minus'}">${e.xp>=0?'+':''}${e.xp}</span>
+          <button class="entry-icon-btn" data-edit-entry="${e.id}" title="تعديل الإجراء">✎</button>
+          <button class="entry-icon-btn" data-del-entry="${e.id}" title="حذف الإجراء">🗑</button>
+        </div>
+      </div>
+      ${e.note ? `<div class="log-note">${escapeHtml(e.note)}</div>` : ''}
+      ${editingEntryId === e.id ? `
+        <div class="note-editor">
+          <select data-entry-select="${e.id}">
+            <option value="">— اختر لتبديل الإجراء —</option>
+            ${allActions().map(a => `<option value="${a.id}" data-xp="${a.xp}" data-label="${escapeHtml(a.label)}">${a.kind==='plus'?'🟢':'🔴'} ${escapeHtml(a.label)} (${a.xp>0?'+':''}${a.xp})</option>`).join('')}
+          </select>
+          <input type="text" id="entryLabel-${e.id}" value="${escapeHtml(e.label)}" maxlength="60">
+          <input type="number" id="entryXp-${e.id}" value="${e.xp}">
+          <div class="actions-row">
+            <button class="cancel-btn" data-cancel-entry="${e.id}">إلغاء</button>
+            <button class="save-btn" data-save-entry="${e.id}">حفظ</button>
+          </div>
+        </div>
+      ` : editingNoteId === e.id ? `
+        <div class="note-editor">
+          <textarea id="noteText-${e.id}" placeholder="اكتب هنا أي تفاصيل تريد إضافتها عن هذا الإجراء...">${escapeHtml(e.note || '')}</textarea>
+          <div class="actions-row">
+            <button class="cancel-btn" data-cancel-note="${e.id}">إلغاء</button>
+            <button class="save-btn" data-save-note="${e.id}">حفظ الملاحظة</button>
+          </div>
+        </div>
+      ` : `<button class="note-toggle" data-open-note="${e.id}">${e.note ? '✎ تعديل الملاحظة' : '📝 إضافة ملاحظة'}</button>`}
+    </div>
+  `).join('');
+}
+
 function render(){
   const app = document.getElementById('app');
+  app.classList.toggle('wide', layoutMode === 'wide');
+
   const { notStarted, daysUntilStart, dayNum, currentPhaseIdx, dayInPhase, finished } = phaseInfo();
-  const todayEntries = getTodayEntries();
-  const totalToday = todayEntries.reduce((s,e)=>s+e.xp,0);
-  const goalPct = Math.max(0, Math.min(100, (totalToday/DAILY_GOAL)*100));
-  const goalReached = totalToday >= DAILY_GOAL;
+  const viewingEntries = getEntriesFor(viewingDateKey);
+  const totalViewing = viewingEntries.reduce((s,e)=>s+e.xp,0);
+  const goalPct = Math.max(0, Math.min(100, (totalViewing/DAILY_GOAL)*100));
+  const goalReached = totalViewing >= DAILY_GOAL;
+  const todayK = todayKey();
   const hist = last7Days();
   const maxAbs = Math.max(...hist.map(h=>Math.abs(h.total)), DAILY_GOAL);
   const lvl = levelInfo();
   const streakCount = computeStreak();
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
 
   const phaseHud = PHASES.map((p,i)=>{
     let pct = 0;
@@ -781,45 +969,61 @@ function render(){
     ? `يبدأ التحدي في ١٧/٧ وينتهي في ٣١/١٢ — يمكن تسجيل الإجراءات من الآن`
     : (finished ? 'انتهت الرحلة — يمكن الاطلاع على النتيجة النهائية' : `اليوم رقم ${dayNum} من ${TOTAL_DAYS} إجمالًا`);
 
-  const logHtml = todayEntries.length === 0
-    ? `<div class="log-empty">لم يُسجَّل أي إجراء اليوم بعد</div>`
-    : todayEntries.slice().reverse().map(e => `
-      <div class="log-item-wrap">
-        <div class="log-item">
-          <div class="l-left">
-            <span>${escapeHtml(e.label)}</span>
-          </div>
-          <div style="display:flex; align-items:center; gap:10px;">
-            <span class="l-time">${fmtTime(e.ts)}</span>
-            <span class="l-xp ${e.xp>=0?'pos':'minus'}">${e.xp>=0?'+':''}${e.xp}</span>
-          </div>
-        </div>
-        ${e.note ? `<div class="log-note">${escapeHtml(e.note)}</div>` : ''}
-        ${editingNoteId === e.id ? `
-          <div class="note-editor">
-            <textarea id="noteText-${e.id}" placeholder="اكتب هنا أي تفاصيل تريد إضافتها عن هذا الإجراء...">${escapeHtml(e.note || '')}</textarea>
-            <div class="actions-row">
-              <button class="cancel-btn" data-cancel-note="${e.id}">إلغاء</button>
-              <button class="save-btn" data-save-note="${e.id}">حفظ الملاحظة</button>
-            </div>
-          </div>
-        ` : `<button class="note-toggle" data-open-note="${e.id}">${e.note ? '✎ تعديل الملاحظة' : '📝 إضافة ملاحظة'}</button>`}
-      </div>
-    `).join('');
+  const viewingLabel = viewingDateKey === todayK ? 'اليوم' : fmtStatDate(viewingDateKey);
+  const logTitle = viewingDateKey === todayK ? 'سجل اليوم' : `سجل يوم ${fmtStatDate(viewingDateKey)}`;
 
   const histHtml = hist.map(h => {
     const heightPct = Math.max(4, (Math.abs(h.total)/maxAbs)*100);
     const cls = h.total > 0 ? 'pos' : (h.total < 0 ? 'neg' : '');
     return `<div class="hist-col">
-      <div class="hist-bar ${cls}" style="height:${heightPct}%"></div>
-      <div class="hist-day">${h.label}</div>
+      <div class="hist-bar ${cls} ${h.isToday?'is-today':''}" style="height:${heightPct}%"></div>
+      <div class="hist-day ${h.isToday?'is-today':''}">${h.label}</div>
     </div>`;
   }).join('');
+
+  const actionSections = ['plus','minus'].map(kind => {
+    const sectionActions = getSectionActions(kind);
+    const mode = state.sortMode[kind];
+    const title = kind === 'plus' ? '🟢 الإنجازات ⭐' : '🔴 المخالفات ⚠️';
+    const btnsHtml = sectionActions.map(a => `
+      <button class="act-btn ${a.kind} ${a.wide?'wide':''}" data-id="${a.id}">
+        ${a.custom ? `<span class="del-x" data-del="${a.id}">✕</span>` : ''}
+        <span class="edit-pencil" data-edit="${a.id}">✎</span>
+        <span class="emoji">${a.emoji}</span>
+        <span>${a.label}</span>
+        <span class="xp">${a.xp>0?'+':''}${a.xp} XP</span>
+        ${mode === 'manual' ? `
+          <span class="order-arrows">
+            <button class="arrow-btn" data-move-kind="${kind}" data-move-id="${a.id}" data-move-dir="-1">▲</button>
+            <button class="arrow-btn" data-move-kind="${kind}" data-move-id="${a.id}" data-move-dir="1">▼</button>
+          </span>` : ''}
+      </button>
+    `).join('');
+    return `
+    <div class="content-block">
+      <div class="section-header">
+        <h3 class="section-title ${kind}">${title}</h3>
+        <div class="sort-controls">
+          <button class="sort-btn ${mode==='asc'?'active':''}" data-sort-kind="${kind}" data-sort-mode="asc">تصاعديًا</button>
+          <button class="sort-btn ${mode==='desc'?'active':''}" data-sort-kind="${kind}" data-sort-mode="desc">تنازليًا</button>
+          <button class="sort-btn ${mode==='manual'?'active':''}" data-sort-kind="${kind}" data-sort-mode="manual">ترتيب يدوي</button>
+        </div>
+      </div>
+      <div class="actions">${btnsHtml}</div>
+    </div>
+    `;
+  }).join('');
+
+  const stats = computeStats();
 
   app.innerHTML = `
     <div class="user-bar">
       <span class="u-name">${currentUser && currentUser.picture ? `<img src="${currentUser.picture}" alt="">` : ''}${escapeHtml(currentUser ? (currentUser.name || currentUser.email) : '')}</span>
-      <button class="signout-btn" id="signOutBtn">تسجيل الخروج</button>
+      <span class="u-right">
+        <button class="icon-toggle-btn" id="layoutToggleBtn" title="تبديل نمط العرض (عرضي/طولي)">${layoutMode === 'wide' ? '📱' : '💻'}</button>
+        <button class="icon-toggle-btn" id="themeToggleBtn" title="تبديل الوضع الداكن/الفاتح">${isLight ? '🌙' : '☀️'}</button>
+        <button class="signout-btn" id="signOutBtn">تسجيل الخروج</button>
+      </span>
     </div>
     <div class="title"><span class="mark">⚡</span> سجل XP اليومي</div>
     <div class="subtitle">${subtitleText}</div>
@@ -830,173 +1034,168 @@ function render(){
     <div class="level-badge">🎖️ <span class="lv-num">Level ${lvl.level}:</span> ${lvl.title}</div>
     <div class="streak-line">🔥 <b>${streakCount}</b> ${streakCount === 1 ? 'يوم متتالي' : 'أيام متتالية'}</div>
 
-    <div class="card">
-      <div class="xp-row">
-        <div>
-          <div class="xp-today ${totalToday>=0?'pos':'neg'}">${totalToday>=0?'+':''}${totalToday}</div>
-        </div>
-        <div class="xp-goal-label">الهدف: ${DAILY_GOAL} XP</div>
-      </div>
-      <div class="bar-track"><div class="bar-fill ${goalReached?'done':''}" style="width:${goalPct}%"></div></div>
-    </div>
+    <div class="content-area">
 
-    ${['plus','minus'].map(kind => {
-      const sectionActions = getSectionActions(kind);
-      const mode = state.sortMode[kind];
-      const title = kind === 'plus' ? '🟢 الإنجازات ⭐' : '🔴 المخالفات ⚠️';
-      const btnsHtml = sectionActions.map(a => `
-        <button class="act-btn ${a.kind} ${a.wide?'wide':''}" data-id="${a.id}">
-          ${a.custom ? `<span class="del-x" data-del="${a.id}">✕</span>` : ''}
-          <span class="edit-pencil" data-edit="${a.id}">✎</span>
-          <span class="emoji">${a.emoji}</span>
-          <span>${a.label}</span>
-          <span class="xp">${a.xp>0?'+':''}${a.xp} XP</span>
-          ${mode === 'manual' ? `
-            <span class="order-arrows">
-              <button class="arrow-btn" data-move-kind="${kind}" data-move-id="${a.id}" data-move-dir="-1">▲</button>
-              <button class="arrow-btn" data-move-kind="${kind}" data-move-id="${a.id}" data-move-dir="1">▼</button>
-            </span>` : ''}
+      <div class="content-block">
+        <div class="card">
+          <div class="xp-row">
+            <div>
+              <div class="xp-today ${totalViewing>=0?'pos':'neg'}">${totalViewing>=0?'+':''}${totalViewing}</div>
+            </div>
+            <div class="xp-goal-label">${viewingLabel} — الهدف: ${DAILY_GOAL} XP</div>
+          </div>
+          <div class="bar-track"><div class="bar-fill ${goalReached?'done':''}" style="width:${goalPct}%"></div></div>
+        </div>
+      </div>
+
+      ${actionSections}
+
+      <div class="content-block">
+        <button class="act-btn add-new wide" id="openAddPanel" style="width:100%;">
+          <span class="emoji">➕</span>
+          <span>أضف مهمة جديدة</span>
         </button>
-      `).join('');
-      return `
-      <div class="section-header">
-        <h3 class="section-title ${kind}">${title}</h3>
-        <div class="sort-controls">
-          <button class="sort-btn ${mode==='asc'?'active':''}" data-sort-kind="${kind}" data-sort-mode="asc">تصاعديًا</button>
-          <button class="sort-btn ${mode==='desc'?'active':''}" data-sort-kind="${kind}" data-sort-mode="desc">تنازليًا</button>
-          <button class="sort-btn ${mode==='manual'?'active':''}" data-sort-kind="${kind}" data-sort-mode="manual">ترتيب يدوي</button>
-        </div>
-      </div>
-      <div class="actions">${btnsHtml}</div>
-      `;
-    }).join('')}
 
-    <button class="act-btn add-new wide" id="openAddPanel" style="width:100%; margin-bottom:16px;">
-      <span class="emoji">➕</span>
-      <span>أضف مهمة جديدة</span>
-    </button>
+        ${addPanelOpen ? `
+        <div class="add-panel">
+          <input type="text" id="newLabel" placeholder="اسم المهمة (مثال: قراءة مقال تقني)" maxlength="40">
+          <div class="row">
+            <input type="number" id="newXp" placeholder="XP" value="10">
+            <div class="add-hint">يُستخدم رقم سالب إذا كانت المهمة تُنقص نقاط الخبرة (مثال: -15)</div>
+          </div>
+          <div class="actions-row">
+            <button class="cancel-btn" id="cancelAdd">إلغاء</button>
+            <button class="save-btn" id="saveAdd">حفظ المهمة</button>
+          </div>
+        </div>` : ''}
 
-    ${addPanelOpen ? `
-    <div class="add-panel">
-      <input type="text" id="newLabel" placeholder="اسم المهمة (مثال: قراءة مقال تقني)" maxlength="40">
-      <div class="row">
-        <input type="number" id="newXp" placeholder="XP" value="10">
-        <div class="add-hint">يُستخدم رقم سالب إذا كانت المهمة تُنقص نقاط الخبرة (مثال: -15)</div>
-      </div>
-      <div class="actions-row">
-        <button class="cancel-btn" id="cancelAdd">إلغاء</button>
-        <button class="save-btn" id="saveAdd">حفظ المهمة</button>
-      </div>
-    </div>` : ''}
-
-    ${editingId ? (() => {
-      const target = allActions().find(a => a.id === editingId);
-      if(!target) return '';
-      return `
-      <div class="add-panel">
-        <input type="text" id="editLabel" value="${target.label}" maxlength="40">
-        <div class="row">
-          <input type="number" id="editXp" value="${target.xp}">
-          <div class="add-hint">عدّل اسم المهمة، ويمكن أيضًا تعديل قيمة نقاط الخبرة</div>
-        </div>
-        <div class="actions-row">
-          ${isBuiltIn(editingId) ? `<button class="reset-link" id="resetEdit">استعادة الاسم الافتراضي</button>` : ''}
-          <button class="cancel-btn" id="cancelEdit">إلغاء</button>
-          <button class="save-btn" id="saveEditBtn">حفظ التعديل</button>
-        </div>
-      </div>`;
-    })() : ''}
-
-    <div class="card">
-      <div class="log-header">
-        <h3>سجل اليوم</h3>
-        <button class="undo" id="undoBtn" ${todayEntries.length===0?'disabled':''}>↩ تراجع عن آخر إجراء</button>
-      </div>
-      <div class="log-list">${logHtml}</div>
-    </div>
-
-    <div class="card">
-      <div class="log-header"><h3>آخر ٧ أيام</h3></div>
-      <div class="history">${histHtml}</div>
-    </div>
-
-    <div class="card">
-      <button class="cal-toggle" id="calToggle">${calendarOpen ? 'إخفاء التقويم الكامل' : 'عرض التقويم الكامل'}</button>
-      ${calendarOpen ? `
-      <div class="calendar">
-        ${buildCalendarMonths().map(m => {
-          const start = dateFromKey(START_DATE);
-          const end = dateFromKey(END_DATE);
-          const todayStr = todayKey();
-          const firstWeekday = new Date(m.year, m.month, 1).getDay();
-          const leadingBlanks = Array.from({length: firstWeekday}).map(() => `<div class="cal-day oor"></div>`).join('');
-          const dayCells = Array.from({length: m.daysInMonth}).map((_, i) => {
-            const dayNum = i + 1;
-            const dateObj = new Date(m.year, m.month, dayNum);
-            const dateObj0 = new Date(m.year, m.month, dayNum); dateObj0.setHours(0,0,0,0);
-            const key = todayKey(dateObj);
-            const inRange = dateObj0 >= start && dateObj0 <= end;
-            const isToday = key === todayStr;
-            if(!inRange){
-              return `<div class="cal-day oor"><span class="cal-daynum">${dayNum}</span></div>`;
-            }
-            const entries = state.days[key] || [];
-            const total = entries.reduce((s,e)=>s+e.xp,0);
-            const cls = total >= DAILY_GOAL ? 'goal' : (total > 0 ? 'partial' : (total < 0 ? 'neg' : 'zero'));
-            return `<div class="cal-day ${cls} ${isToday?'today':''}">
-              <span class="cal-daynum">${dayNum}</span>
-              <span class="cal-xp">${total===0?'0':(total>0?'+':'')+total}</span>
-            </div>`;
-          }).join('');
+        ${editingId ? (() => {
+          const target = allActions().find(a => a.id === editingId);
+          if(!target) return '';
           return `
-          <div class="cal-month">
-            <div class="cal-month-title">${MONTH_NAMES[m.month]} ${m.year}</div>
-            <div class="cal-weekdays">${WEEKDAY_SHORT.map(w=>`<span>${w}</span>`).join('')}</div>
-            <div class="cal-grid">${leadingBlanks}${dayCells}</div>
+          <div class="add-panel">
+            <input type="text" id="editLabel" value="${target.label}" maxlength="40">
+            <div class="row">
+              <input type="number" id="editXp" value="${target.xp}">
+              <div class="add-hint">عدّل اسم المهمة، ويمكن أيضًا تعديل قيمة نقاط الخبرة</div>
+            </div>
+            <div class="actions-row">
+              ${isBuiltIn(editingId) ? `<button class="reset-link" id="resetEdit">استعادة الاسم الافتراضي</button>` : ''}
+              <button class="cancel-btn" id="cancelEdit">إلغاء</button>
+              <button class="save-btn" id="saveEditBtn">حفظ التعديل</button>
+            </div>
           </div>`;
-        }).join('')}
-        <div class="cal-legend">
-          <span><span class="dot" style="background: var(--green)"></span>تحقيق الهدف اليومي (١٠٠ فأكثر)</span>
-          <span><span class="dot" style="background: var(--gold)"></span>نقاط موجبة دون الهدف</span>
-          <span><span class="dot" style="background: var(--red)"></span>نقاط سالبة</span>
+        })() : ''}
+      </div>
+
+      <div class="content-block">
+        <div class="card" id="logCard">
+          <div class="log-header">
+            <div class="log-day-nav">
+              <button class="daynav-btn" id="prevDayBtn" ${viewingDateKey<=START_DATE?'disabled':''} title="اليوم السابق">‹</button>
+              <h3>${logTitle}</h3>
+              <button class="daynav-btn" id="nextDayBtn" ${viewingDateKey>=END_DATE?'disabled':''} title="اليوم التالي">›</button>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center;">
+              ${viewingDateKey !== todayK ? `<button class="undo" id="jumpTodayBtn">اليوم</button>` : ''}
+              <button class="undo" id="undoBtn" ${viewingEntries.length===0?'disabled':''}>↩ تراجع عن آخر إجراء</button>
+            </div>
+          </div>
+          <div class="log-list">${renderLogList(viewingDateKey)}</div>
         </div>
-      </div>` : ''}
+      </div>
+
+      <div class="content-block">
+        <div class="card">
+          <div class="log-header"><h3>آخر ٧ أيام (تنتهي باليوم الحالي)</h3></div>
+          <div class="history">${histHtml}</div>
+        </div>
+      </div>
+
+      <div class="content-block">
+        <div class="card">
+          <button class="cal-toggle" id="calToggle">${calendarOpen ? 'إخفاء التقويم الكامل' : 'عرض التقويم الكامل'}</button>
+          ${calendarOpen ? `
+          <div class="calendar">
+            ${buildCalendarMonths().map(m => {
+              const start = dateFromKey(START_DATE);
+              const end = dateFromKey(END_DATE);
+              const todayStr = todayK;
+              // Monday-first offset: JS getDay() is 0=Sun..6=Sat, shift so Monday=0..Sunday=6
+              const firstWeekday = (new Date(m.year, m.month, 1).getDay() + 6) % 7;
+              const leadingBlanks = Array.from({length: firstWeekday}).map(() => `<div class="cal-day oor"></div>`).join('');
+              const dayCells = Array.from({length: m.daysInMonth}).map((_, i) => {
+                const dayNum2 = i + 1;
+                const dateObj = new Date(m.year, m.month, dayNum2);
+                const dateObj0 = new Date(m.year, m.month, dayNum2); dateObj0.setHours(0,0,0,0);
+                const key = todayKey(dateObj);
+                const inRange = dateObj0 >= start && dateObj0 <= end;
+                const isToday = key === todayStr;
+                const isViewing = key === viewingDateKey;
+                if(!inRange){
+                  return `<div class="cal-day oor"><span class="cal-daynum">${dayNum2}</span></div>`;
+                }
+                const entries = state.days[key] || [];
+                const total = entries.reduce((s,e)=>s+e.xp,0);
+                const cls = total >= DAILY_GOAL ? 'goal' : (total > 0 ? 'partial' : (total < 0 ? 'neg' : 'zero'));
+                return `<div class="cal-day ${cls} ${isToday?'today':''} ${isViewing?'viewing':''}" data-cal-day="${key}">
+                  <span class="cal-daynum">${dayNum2}</span>
+                  <span class="cal-xp">${total===0?'0':(total>0?'+':'')+total}</span>
+                </div>`;
+              }).join('');
+              return `
+              <div class="cal-month">
+                <div class="cal-month-title">${MONTH_NAMES[m.month]} ${m.year}</div>
+                <div class="cal-weekdays">${WEEKDAY_SHORT.map(w=>`<span>${w}</span>`).join('')}</div>
+                <div class="cal-grid">${leadingBlanks}${dayCells}</div>
+              </div>`;
+            }).join('')}
+            <div class="cal-legend">
+              <span><span class="dot" style="background: var(--green)"></span>تحقيق الهدف اليومي (١٠٠ فأكثر)</span>
+              <span><span class="dot" style="background: var(--gold)"></span>نقاط موجبة دون الهدف</span>
+              <span><span class="dot" style="background: var(--red)"></span>نقاط سالبة</span>
+            </div>
+            <div class="add-hint" style="margin-top:8px;">اضغط على أي يوم داخل النطاق لعرض وتعديل سجله</div>
+          </div>` : ''}
+        </div>
+      </div>
+
+      <div class="content-block">
+        <div class="card">
+          <div class="log-header"><h3>📊 الإحصائيات</h3></div>
+          <div class="stats-grid">
+            <div class="stat-item">
+              <span class="stat-label">متوسط XP يوميًا</span>
+              <span class="stat-value ${stats.avg>=0?'pos':'neg'}">${stats.avg>=0?'+':''}${Math.round(stats.avg)}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">أفضل يوم</span>
+              <span class="stat-value pos">${stats.best ? (stats.best.total>=0?'+':'')+stats.best.total : '—'}</span>
+              <span class="stat-label">${stats.best ? fmtStatDate(stats.best.key) : ''}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">أسوأ يوم</span>
+              <span class="stat-value ${stats.worst && stats.worst.total<0?'neg':'pos'}">${stats.worst ? (stats.worst.total>=0?'+':'')+stats.worst.total : '—'}</span>
+              <span class="stat-label">${stats.worst ? fmtStatDate(stats.worst.key) : ''}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">سلسلة الأيام المتتالية</span>
+              <span class="stat-value">🔥 ${stats.streak}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">عدد جلسات العمل (الإجراءات المسجّلة)</span>
+              <span class="stat-value">${stats.sessionsCount}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="content-block">
+        <div class="footnote">البيانات محفوظة تلقائيًا على هذا الجهاز</div>
+        <div class="daily-message">${dailyMessage({ notStarted, daysUntilStart, finished, dayNum, currentPhaseIdx, dayInPhase })}</div>
+      </div>
+
     </div>
-
-    ${(() => {
-      const stats = computeStats();
-      return `
-      <div class="card">
-        <div class="log-header"><h3>📊 الإحصائيات</h3></div>
-        <div class="stats-grid">
-          <div class="stat-item">
-            <span class="stat-label">متوسط XP يوميًا</span>
-            <span class="stat-value ${stats.avg>=0?'pos':'neg'}">${stats.avg>=0?'+':''}${Math.round(stats.avg)}</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">أفضل يوم</span>
-            <span class="stat-value pos">${stats.best ? (stats.best.total>=0?'+':'')+stats.best.total : '—'}</span>
-            <span class="stat-label">${stats.best ? fmtStatDate(stats.best.key) : ''}</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">أسوأ يوم</span>
-            <span class="stat-value ${stats.worst && stats.worst.total<0?'neg':'pos'}">${stats.worst ? (stats.worst.total>=0?'+':'')+stats.worst.total : '—'}</span>
-            <span class="stat-label">${stats.worst ? fmtStatDate(stats.worst.key) : ''}</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">سلسلة الأيام المتتالية</span>
-            <span class="stat-value">🔥 ${stats.streak}</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">عدد جلسات العمل (الإجراءات المسجّلة)</span>
-            <span class="stat-value">${stats.sessionsCount}</span>
-          </div>
-        </div>
-      </div>`;
-    })()}
-
-    <div class="footnote">البيانات محفوظة تلقائيًا على هذا الجهاز</div>
-    <div class="daily-message">${dailyMessage({ notStarted, daysUntilStart, finished, dayNum, currentPhaseIdx, dayInPhase })}</div>
   `;
 
   allActions().forEach(a => {
@@ -1018,6 +1217,7 @@ function render(){
       editingId = x.getAttribute('data-edit');
       addPanelOpen = false;
       editingNoteId = null;
+      editingEntryId = null;
       render();
     });
   });
@@ -1039,6 +1239,7 @@ function render(){
       editingNoteId = x.getAttribute('data-open-note');
       addPanelOpen = false;
       editingId = null;
+      editingEntryId = null;
       render();
     });
   });
@@ -1057,11 +1258,66 @@ function render(){
       saveNote(id, ta ? ta.value.trim() : '');
     });
   });
+  app.querySelectorAll('[data-edit-entry]').forEach(x => {
+    x.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      editingEntryId = x.getAttribute('data-edit-entry');
+      editingNoteId = null;
+      render();
+    });
+  });
+  app.querySelectorAll('[data-del-entry]').forEach(x => {
+    x.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      deleteEntry(viewingDateKey, x.getAttribute('data-del-entry'));
+    });
+  });
+  app.querySelectorAll('[data-cancel-entry]').forEach(x => {
+    x.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      editingEntryId = null;
+      render();
+    });
+  });
+  app.querySelectorAll('[data-save-entry]').forEach(x => {
+    x.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      const id = x.getAttribute('data-save-entry');
+      const labelEl = document.getElementById(`entryLabel-${id}`);
+      const xpEl = document.getElementById(`entryXp-${id}`);
+      const label = labelEl.value.trim();
+      const xp = parseInt(xpEl.value, 10);
+      if(!label || isNaN(xp)) return;
+      saveEntryEdit(viewingDateKey, id, label, xp);
+    });
+  });
+  app.querySelectorAll('[data-entry-select]').forEach(sel => {
+    sel.addEventListener('change', () => {
+      const id = sel.getAttribute('data-entry-select');
+      const opt = sel.options[sel.selectedIndex];
+      if(!opt.value) return;
+      const labelEl = document.getElementById(`entryLabel-${id}`);
+      const xpEl = document.getElementById(`entryXp-${id}`);
+      if(labelEl) labelEl.value = opt.getAttribute('data-label');
+      if(xpEl) xpEl.value = opt.getAttribute('data-xp');
+    });
+  });
+  app.querySelectorAll('[data-cal-day]').forEach(x => {
+    x.addEventListener('click', () => viewDate(x.getAttribute('data-cal-day')));
+  });
+
   const undoBtn = document.getElementById('undoBtn');
   if(undoBtn) undoBtn.addEventListener('click', undoLast);
 
+  const prevDayBtn = document.getElementById('prevDayBtn');
+  if(prevDayBtn) prevDayBtn.addEventListener('click', () => shiftViewingDate(-1));
+  const nextDayBtn = document.getElementById('nextDayBtn');
+  if(nextDayBtn) nextDayBtn.addEventListener('click', () => shiftViewingDate(1));
+  const jumpTodayBtn = document.getElementById('jumpTodayBtn');
+  if(jumpTodayBtn) jumpTodayBtn.addEventListener('click', jumpToToday);
+
   const openBtn = document.getElementById('openAddPanel');
-  if(openBtn) openBtn.addEventListener('click', () => { addPanelOpen = true; editingId = null; editingNoteId = null; render(); });
+  if(openBtn) openBtn.addEventListener('click', () => { addPanelOpen = true; editingId = null; editingNoteId = null; editingEntryId = null; render(); });
   const cancelBtn = document.getElementById('cancelAdd');
   if(cancelBtn) cancelBtn.addEventListener('click', () => { addPanelOpen = false; render(); });
   const saveBtn = document.getElementById('saveAdd');
@@ -1093,9 +1349,23 @@ function render(){
 
   const signOutBtn = document.getElementById('signOutBtn');
   if(signOutBtn) signOutBtn.addEventListener('click', signOut);
+
+  const themeBtn = document.getElementById('themeToggleBtn');
+  if(themeBtn) themeBtn.addEventListener('click', toggleTheme);
+  const layoutBtn = document.getElementById('layoutToggleBtn');
+  if(layoutBtn) layoutBtn.addEventListener('click', toggleLayout);
 }
 
 window.addEventListener('load', function(){
+  applyTheme(getStoredTheme());
+  layoutMode = getStoredLayout();
+
+  const loginThemeBtn = document.getElementById('themeToggleBtnLogin');
+  if(loginThemeBtn){
+    loginThemeBtn.textContent = document.documentElement.getAttribute('data-theme') === 'light' ? '🌙' : '☀️';
+    loginThemeBtn.addEventListener('click', toggleTheme);
+  }
+
   const auth = getStoredAuth();
   initGoogleButton();
   if(auth && auth.email){
