@@ -22,7 +22,20 @@
     --font-display: 'Tajawal', sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
   }
+  html[data-theme="light"]{
+    --bg: #f5f3fa;
+    --panel: #ffffff;
+    --panel-2: #eeebf7;
+    --line: #dcd6ee;
+    --text: #241f33;
+    --muted: #756e93;
+    --gold: #b8860b;
+    --gold-dim: #e8d48a;
+    --green: #1f9d5c;
+    --red: #d6394a;
+  }
   *{ box-sizing: border-box; }
+  html, body{ transition: background-color .25s ease, color .25s ease; }
   body{
     margin:0;
     background: var(--bg);
@@ -32,6 +45,24 @@
     min-height: 100vh;
   }
   .wrap{ max-width: 480px; margin: 0 auto; }
+
+  /* Theme toggle */
+  .theme-toggle{
+    background: var(--panel-2); border:1px solid var(--line); color: var(--text);
+    border-radius: 20px; padding: 4px 10px; font-size:13px; cursor:pointer;
+    display:flex; align-items:center; gap:4px;
+  }
+
+  /* Desktop wide layout */
+  @media (min-width: 900px){
+    .wrap{ max-width: 1040px; }
+    .actions{ grid-template-columns: repeat(4, 1fr); }
+    .stats-grid{ grid-template-columns: repeat(4, 1fr); }
+    .day-summary-grid{ grid-template-columns: repeat(3, 1fr) !important; }
+  }
+  @media (max-width: 899px){
+    .wrap{ max-width: 480px; }
+  }
 
   /* Header */
   .title{
@@ -299,10 +330,138 @@
     background:none; border:none; color: var(--muted); font-size:12px;
     text-decoration: underline; cursor:pointer; padding:0;
   }
+  .user-bar-right{ display:flex; align-items:center; gap:10px; }
+
+  /* Phase meta (title/logo/goals) */
+  .phase-meta{
+    display:flex; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap;
+  }
+  .phase-meta .p-logo{ font-size:22px; }
+  .phase-meta .p-title{ font-weight:800; font-size:14px; }
+  .phase-meta .p-edit{
+    background:none; border:none; color: var(--muted); font-size:12px; cursor:pointer; text-decoration:underline; padding:0;
+  }
+  .phase-goals{ display:flex; flex-direction:column; gap:6px; margin-top:8px; }
+  .phase-goal-item{
+    display:flex; align-items:center; gap:8px; background: var(--panel-2); border:1px solid var(--line);
+    border-radius:8px; padding:7px 10px; font-size:13px;
+  }
+  .phase-goal-item.done{ opacity:.6; text-decoration: line-through; }
+  .phase-goal-item input[type="checkbox"]{ width:16px; height:16px; cursor:pointer; }
+  .phase-goal-item .g-del{ margin-inline-start:auto; background:none; border:none; color:var(--muted); cursor:pointer; font-size:12px; }
+  .goal-add-row{ display:flex; gap:6px; margin-top:8px; }
+  .goal-add-row input{
+    flex:1; background: var(--panel-2); border:1px solid var(--line); border-radius:8px;
+    padding:8px 10px; color: var(--text); font-family: var(--font-display); font-size:13px;
+  }
+  .goal-add-row input.xp-input{ flex: 0 0 70px; font-family: var(--font-mono); }
+  .goal-add-row button{
+    background: var(--gold); color:#241f0a; border:none; border-radius:8px; padding:8px 12px;
+    font-weight:700; cursor:pointer; font-size:13px;
+  }
+  .phase-bonus-note{ font-size:12px; color: var(--green); margin-top:6px; font-family: var(--font-mono); }
+  .meta-edit-panel{ display:flex; flex-direction:column; gap:8px; margin-top:8px; }
+  .meta-edit-panel input{
+    background: var(--panel-2); border:1px solid var(--line); border-radius:8px;
+    padding:8px 10px; color: var(--text); font-family: var(--font-display); font-size:13px;
+  }
+  .meta-edit-panel .actions-row{ display:flex; gap:8px; justify-content:flex-end; }
+  .meta-edit-panel button{
+    border-radius:8px; border:1px solid var(--line); padding: 7px 12px;
+    font-family: var(--font-display); font-weight:700; font-size: 12px; cursor:pointer;
+  }
+  .meta-edit-panel .save-btn{ background: var(--gold); color:#241f0a; border-color: var(--gold); }
+  .meta-edit-panel .cancel-btn{ background: transparent; color: var(--muted); }
+
+  /* Work hours */
+  .hours-row{
+    display:flex; align-items:center; gap:10px; margin-top:10px; padding-top:10px;
+    border-top:1px dashed var(--line);
+  }
+  .hours-row label{ font-size:12px; color: var(--muted); flex:1; }
+  .hours-row input{
+    width:90px; background: var(--panel-2); border:1px solid var(--line); border-radius:8px;
+    padding:6px 8px; color: var(--text); font-family: var(--font-mono); font-size:13px; text-align:center;
+  }
+
+  /* Day summary */
+  .day-summary-grid{
+    display:grid; grid-template-columns: 1fr 1fr; gap:10px;
+  }
+  .ds-item{ display:flex; flex-direction:column; gap:4px; }
+  .ds-item label{ font-size:11px; color: var(--muted); }
+  .ds-item input{
+    background: var(--panel-2); border:1px solid var(--line); border-radius:8px;
+    padding:7px 8px; color: var(--text); font-family: var(--font-mono); font-size:13px;
+  }
+  .ds-save{ margin-top:10px; width:100%; background: var(--gold); color:#241f0a; border:none;
+    border-radius:10px; padding:9px; font-weight:700; cursor:pointer; font-size:13px; }
+
+  /* Weekly card */
+  .weekly-toggle{
+    width:100%; background: var(--panel-2); border:1px solid var(--line); border-radius:10px;
+    color: var(--text); font-family: var(--font-display); font-weight:700; font-size:13px;
+    padding: 10px; cursor:pointer; margin-top:8px;
+  }
+  .weekly-breakdown{ display:flex; flex-direction:column; gap:6px; margin-top:10px; }
+  .weekly-breakdown .wb-item{
+    display:flex; justify-content:space-between; background: var(--panel-2); border:1px solid var(--line);
+    border-radius:8px; padding:7px 10px; font-size:13px;
+  }
+  .weekly-breakdown .wb-item .wb-count{ font-family: var(--font-mono); color: var(--gold); font-weight:700; }
+  .weekly-goal-item{
+    display:flex; align-items:center; gap:8px; background: var(--panel-2); border:1px solid var(--line);
+    border-radius:8px; padding:7px 10px; font-size:13px; margin-bottom:6px;
+  }
+  .weekly-goal-item.done{ opacity:.6; text-decoration: line-through; }
+  .weekly-goal-item .wg-xp{ font-family: var(--font-mono); color: var(--green); font-size:12px; }
+  .weekly-goal-item .g-del{ margin-inline-start:auto; background:none; border:none; color:var(--muted); cursor:pointer; font-size:12px; }
+
+  /* Log item extra controls */
+  .log-item-controls{ display:flex; gap:6px; margin-top:6px; }
+  .log-item-controls button{
+    background:none; border:none; color: var(--muted); font-size:11px; cursor:pointer; text-decoration:underline; padding:0;
+  }
+  .swap-panel{ margin-top:8px; display:flex; flex-direction:column; gap:6px; }
+  .swap-panel select{
+    background: var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:8px;
+    color: var(--text); font-family: var(--font-display); font-size:13px;
+  }
+  .entry-edit-panel{ margin-top:8px; display:flex; flex-direction:column; gap:8px; }
+  .entry-edit-panel .row{ display:flex; gap:8px; }
+  .entry-edit-panel input[type="text"]{ flex:1; }
+  .entry-edit-panel input[type="number"]{ width:90px; font-family: var(--font-mono); }
+  .entry-edit-panel input{
+    background: var(--panel); border:1px solid var(--line); border-radius:8px;
+    padding:8px 10px; color: var(--text); font-family: var(--font-display); font-size:13px;
+  }
+  .entry-edit-panel .actions-row{ display:flex; gap:8px; justify-content:flex-end; }
+  .entry-edit-panel button{
+    border-radius:8px; border:1px solid var(--line); padding: 7px 12px;
+    font-family: var(--font-display); font-weight:700; font-size: 12px; cursor:pointer;
+  }
+  .entry-edit-panel .save-btn{ background: var(--gold); color:#241f0a; border-color: var(--gold); }
+  .entry-edit-panel .cancel-btn{ background: transparent; color: var(--muted); }
+
+  /* Calendar hours */
+  .cal-hours{ font-size:9px; color: var(--muted); font-family: var(--font-mono); }
+  .cal-hours-toggle{
+    background: none; border:none; color: var(--muted); font-size:11px; text-decoration:underline;
+    cursor:pointer; padding:0; margin-top:8px;
+  }
 </style>
 </head>
 <body>
+<script>
+  (function(){
+    try{
+      var t = localStorage.getItem('xp-tracker-theme');
+      if(t === 'light') document.documentElement.setAttribute('data-theme','light');
+    }catch(e){}
+  })();
+</script>
 <div class="wrap" id="loginScreen" style="display:none;">
+  <button class="theme-toggle" id="loginThemeToggle" style="margin-bottom:14px;">🌓 تبديل المظهر</button>
   <div class="title login-title"><span class="mark">⚡</span> سجل XP اليومي</div>
   <div class="login-sub">سجّل الدخول بحساب جوجل لتستخدم الموقع</div>
   <div id="googleBtn"></div>
@@ -336,6 +495,18 @@ function handleCredentialResponse(response){
   const user = { email: payload.email, name: payload.name, picture: payload.picture };
   localStorage.setItem(AUTH_KEY, JSON.stringify(user));
   showApp(user);
+}
+
+function toggleTheme(){
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  if(isLight){
+    document.documentElement.removeAttribute('data-theme');
+    localStorage.setItem('xp-tracker-theme', 'dark');
+  } else {
+    document.documentElement.setAttribute('data-theme', 'light');
+    localStorage.setItem('xp-tracker-theme', 'light');
+  }
+  if(document.getElementById('app').style.display !== 'none') render();
 }
 
 function signOut(){
@@ -414,7 +585,10 @@ PHASES.forEach(p => { p.days = daysBetween(dateFromKey(p.start), dateFromKey(p.e
 const TOTAL_DAYS = daysBetween(dateFromKey(START_DATE), dateFromKey(END_DATE)) + 1;
 
 const MONTH_NAMES = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const WEEKDAY_SHORT = ['أحد','إثن','ثلا','أرب','خمي','جمع','سبت'];
+const WEEKDAY_SHORT = ['إثن','ثلا','أرب','خمي','جمع','سبت','أحد'];
+
+// Convert JS getDay() (0=Sunday..6=Saturday) to a Monday-first index (0=Monday..6=Sunday)
+function mondayFirstIndex(jsDay){ return (jsDay + 6) % 7; }
 
 let calendarOpen = false;
 
@@ -455,6 +629,28 @@ function migrateEntries(){
   return changed;
 }
 
+function defaultPhaseMeta(){
+  const o = {};
+  PHASES.forEach((p,i) => { o[i] = { title:'', logo:'🚩', goals:[], bonusGiven:false }; });
+  return o;
+}
+
+function blankState(){
+  return {
+    days: {},
+    customActions: [],
+    overrides: {},
+    sortMode: { plus:'default', minus:'default' },
+    manualOrder: { plus:[], minus:[] },
+    streakBonusDays: [],
+    phaseMeta: defaultPhaseMeta(),
+    weeklyGoals: {},
+    workHours: {},
+    daySummary: {},
+    showHoursInCalendar: true,
+  };
+}
+
 async function loadState(){
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -464,9 +660,16 @@ async function loadState(){
     if(!state.overrides) state.overrides = {};
     if(!state.sortMode) state.sortMode = { plus: 'default', minus: 'default' };
     if(!state.manualOrder) state.manualOrder = { plus: [], minus: [] };
+    if(!state.streakBonusDays) state.streakBonusDays = [];
+    if(!state.phaseMeta) state.phaseMeta = defaultPhaseMeta();
+    PHASES.forEach((p,i) => { if(!state.phaseMeta[i]) state.phaseMeta[i] = { title:'', logo:'🚩', goals:[], bonusGiven:false }; });
+    if(!state.weeklyGoals) state.weeklyGoals = {};
+    if(!state.workHours) state.workHours = {};
+    if(!state.daySummary) state.daySummary = {};
+    if(state.showHoursInCalendar === undefined) state.showHoursInCalendar = true;
     if(migrateEntries()) await saveState();
   }catch(e){
-    state = { days: {}, customActions: [], overrides: {}, sortMode: { plus:'default', minus:'default' }, manualOrder: { plus:[], minus:[] } };
+    state = blankState();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }
 }
@@ -706,6 +909,26 @@ async function checkStreakBonus(){
   }
 }
 
+function computeTaskCounts(daysObj){
+  const counts = {};
+  Object.values(daysObj).forEach(list => {
+    list.forEach(e => {
+      const key = e.aid || e.label;
+      if(!counts[key]) counts[key] = { label: e.label, count: 0, xp: 0 };
+      counts[key].count += 1;
+      counts[key].xp += e.xp;
+    });
+  });
+  return counts;
+}
+
+function computeWorkHoursStats(){
+  const vals = Object.values(state.workHours || {}).filter(v => typeof v === 'number' && !isNaN(v));
+  if(vals.length === 0) return { avg:0, max:0, min:0, count:0 };
+  const sum = vals.reduce((s,v)=>s+v,0);
+  return { avg: sum/vals.length, max: Math.max(...vals), min: Math.min(...vals), count: vals.length };
+}
+
 function computeStats(){
   const activeDays = Object.keys(state.days)
     .filter(k => (state.days[k] || []).length > 0)
@@ -722,8 +945,176 @@ function computeStats(){
   });
 
   const sessionsCount = activeDays.reduce((s,d)=>s+d.count,0);
+  const taskCounts = computeTaskCounts(state.days);
+  const submitCount = taskCounts['submit'] ? taskCounts['submit'].count : 0;
+  const hoursStats = computeWorkHoursStats();
 
-  return { avg, best, worst, sessionsCount, streak: computeStreak() };
+  return { avg, best, worst, sessionsCount, streak: computeStreak(), taskCounts, submitCount, hoursStats };
+}
+
+/* ---------- Week helpers (week starts Monday) ---------- */
+function weekStartKey(d = new Date()){
+  const dt = new Date(d); dt.setHours(0,0,0,0);
+  const idx = mondayFirstIndex(dt.getDay());
+  dt.setDate(dt.getDate() - idx);
+  return todayKey(dt);
+}
+
+function weekDayKeys(weekKey){
+  const start = dateFromKey(weekKey);
+  const out = [];
+  for(let i=0;i<7;i++){
+    const d = new Date(start); d.setDate(d.getDate()+i);
+    out.push(todayKey(d));
+  }
+  return out;
+}
+
+function computeWeeklySummary(weekKey = weekStartKey()){
+  const keys = weekDayKeys(weekKey);
+  const daysObj = {};
+  keys.forEach(k => { daysObj[k] = state.days[k] || []; });
+  const totalXp = Object.values(daysObj).reduce((s,list)=>s + list.reduce((s2,e)=>s2+e.xp,0), 0);
+  const taskCounts = computeTaskCounts(daysObj);
+  const tasksCompleted = Object.values(daysObj).reduce((s,list)=>s+list.length,0);
+  return { weekKey, totalXp, tasksCompleted, taskCounts };
+}
+
+function fmtWeekRange(weekKey){
+  const start = dateFromKey(weekKey);
+  const end = new Date(start); end.setDate(end.getDate()+6);
+  return `${start.toLocaleDateString('ar',{day:'numeric',month:'short'})} — ${end.toLocaleDateString('ar',{day:'numeric',month:'short'})}`;
+}
+
+let weeklyCardOpen = false;
+
+/* ---------- Phase goals & meta ---------- */
+let editingPhaseMeta = null;
+
+async function savePhaseMeta(idx, title, logo){
+  state.phaseMeta[idx].title = title;
+  state.phaseMeta[idx].logo = logo || '🚩';
+  await saveState();
+  editingPhaseMeta = null;
+  render();
+}
+
+async function addPhaseGoal(idx, text){
+  if(!text) return;
+  state.phaseMeta[idx].goals.push({ id: uniqueId(), text, done:false });
+  await saveState();
+  render();
+}
+
+async function removePhaseGoal(idx, goalId){
+  state.phaseMeta[idx].goals = state.phaseMeta[idx].goals.filter(g => g.id !== goalId);
+  await saveState();
+  render();
+}
+
+async function togglePhaseGoal(idx, goalId){
+  const meta = state.phaseMeta[idx];
+  const goal = meta.goals.find(g => g.id === goalId);
+  if(!goal) return;
+  goal.done = !goal.done;
+  if(meta.goals.length > 0 && meta.goals.every(g => g.done) && !meta.bonusGiven){
+    const entries = getTodayEntries();
+    entries.push({ id: uniqueId(), aid:'phase_bonus', label: `🏁 مكافأة إنجاز جميع أهداف ${PHASES[idx].name}`, xp:500, ts: Date.now(), note:'' });
+    meta.bonusGiven = true;
+  }
+  if(!meta.goals.every(g => g.done)) meta.bonusGiven = false;
+  await saveState();
+  render();
+}
+
+/* ---------- Weekly goals ---------- */
+async function addWeeklyGoal(text, xp){
+  if(!text || isNaN(xp)) return;
+  const wk = weekStartKey();
+  if(!state.weeklyGoals[wk]) state.weeklyGoals[wk] = [];
+  state.weeklyGoals[wk].push({ id: uniqueId(), text, xp, done:false });
+  await saveState();
+  render();
+}
+
+async function removeWeeklyGoal(goalId){
+  const wk = weekStartKey();
+  if(!state.weeklyGoals[wk]) return;
+  state.weeklyGoals[wk] = state.weeklyGoals[wk].filter(g => g.id !== goalId);
+  await saveState();
+  render();
+}
+
+async function toggleWeeklyGoal(goalId){
+  const wk = weekStartKey();
+  const list = state.weeklyGoals[wk] || [];
+  const goal = list.find(g => g.id === goalId);
+  if(!goal) return;
+  if(!goal.done){
+    goal.done = true;
+    const entries = getTodayEntries();
+    entries.push({ id: uniqueId(), aid:'weekly_goal', label: `🎯 هدف الأسبوع: ${goal.text}`, xp: goal.xp, ts: Date.now(), note:'' });
+  } else {
+    goal.done = false;
+  }
+  await saveState();
+  render();
+}
+
+/* ---------- Work hours ---------- */
+async function setWorkHours(dayKey, hours){
+  if(isNaN(hours)){ delete state.workHours[dayKey]; }
+  else { state.workHours[dayKey] = hours; }
+  await saveState();
+  render();
+}
+
+async function toggleShowHours(){
+  state.showHoursInCalendar = !state.showHoursInCalendar;
+  await saveState();
+  render();
+}
+
+/* ---------- Day summary (sleep/rest/focus/study/distraction) ---------- */
+async function saveDaySummary(dayKey, data){
+  state.daySummary[dayKey] = data;
+  await saveState();
+  render();
+}
+
+/* ---------- Log entry management (delete / edit / swap) ---------- */
+let swapEntryId = null;
+let editEntryId = null;
+
+async function deleteEntry(id){
+  const entries = getTodayEntries();
+  const idx = entries.findIndex(e => e.id === id);
+  if(idx === -1) return;
+  entries.splice(idx, 1);
+  await saveState();
+  render();
+}
+
+async function editEntry(id, label, xp){
+  const entry = findTodayEntry(id);
+  if(!entry) return;
+  entry.label = label;
+  entry.xp = xp;
+  await saveState();
+  editEntryId = null;
+  render();
+}
+
+async function swapEntry(id, newActionId){
+  const entry = findTodayEntry(id);
+  const action = allActions().find(a => a.id === newActionId);
+  if(!entry || !action) return;
+  entry.aid = action.id;
+  entry.label = action.label;
+  entry.xp = action.xp;
+  await saveState();
+  swapEntryId = null;
+  render();
 }
 
 function fmtStatDate(key){
@@ -781,6 +1172,42 @@ function render(){
     ? `يبدأ التحدي في ١٧/٧ وينتهي في ٣١/١٢ — يمكن تسجيل الإجراءات من الآن`
     : (finished ? 'انتهت الرحلة — يمكن الاطلاع على النتيجة النهائية' : `اليوم رقم ${dayNum} من ${TOTAL_DAYS} إجمالًا`);
 
+  const activePhaseIdx = notStarted ? 0 : Math.max(0, currentPhaseIdx);
+  const activeMeta = state.phaseMeta[activePhaseIdx];
+  const phaseMetaHtml = `
+    <div class="card">
+      <div class="phase-meta">
+        <span class="p-logo">${activeMeta.logo || '🚩'}</span>
+        <span class="p-title">${escapeHtml(activeMeta.title || PHASES[activePhaseIdx].name)}</span>
+        <button class="p-edit" data-edit-phase="${activePhaseIdx}">✎ تعديل العنوان/الشعار</button>
+      </div>
+      ${editingPhaseMeta === activePhaseIdx ? `
+        <div class="meta-edit-panel">
+          <input type="text" id="phaseTitleInput" placeholder="عنوان المرحلة" value="${escapeHtml(activeMeta.title || '')}" maxlength="40">
+          <input type="text" id="phaseLogoInput" placeholder="شعار (إيموجي)" value="${escapeHtml(activeMeta.logo || '')}" maxlength="4">
+          <div class="actions-row">
+            <button class="cancel-btn" id="cancelPhaseMeta">إلغاء</button>
+            <button class="save-btn" id="savePhaseMetaBtn">حفظ</button>
+          </div>
+        </div>
+      ` : ''}
+      <div class="phase-goals">
+        ${activeMeta.goals.map(g => `
+          <div class="phase-goal-item ${g.done?'done':''}">
+            <input type="checkbox" data-toggle-phase-goal="${g.id}" data-phase-idx="${activePhaseIdx}" ${g.done?'checked':''}>
+            <span>${escapeHtml(g.text)}</span>
+            <button class="g-del" data-del-phase-goal="${g.id}" data-phase-idx="${activePhaseIdx}">✕</button>
+          </div>
+        `).join('')}
+      </div>
+      <div class="goal-add-row">
+        <input type="text" id="newPhaseGoal-${activePhaseIdx}" placeholder="أضف هدفًا لهذه المرحلة">
+        <button data-add-phase-goal="${activePhaseIdx}">إضافة</button>
+      </div>
+      ${activeMeta.goals.length > 0 && activeMeta.goals.every(g=>g.done) ? `<div class="phase-bonus-note">🏆 تم إنجاز جميع أهداف المرحلة (+500 XP)</div>` : ''}
+    </div>
+  `;
+
   const logHtml = todayEntries.length === 0
     ? `<div class="log-empty">لم يُسجَّل أي إجراء اليوم بعد</div>`
     : todayEntries.slice().reverse().map(e => `
@@ -819,13 +1246,18 @@ function render(){
   app.innerHTML = `
     <div class="user-bar">
       <span class="u-name">${currentUser && currentUser.picture ? `<img src="${currentUser.picture}" alt="">` : ''}${escapeHtml(currentUser ? (currentUser.name || currentUser.email) : '')}</span>
-      <button class="signout-btn" id="signOutBtn">تسجيل الخروج</button>
+      <span class="user-bar-right">
+        <button class="theme-toggle" id="themeToggle">🌓</button>
+        <button class="signout-btn" id="signOutBtn">تسجيل الخروج</button>
+      </span>
     </div>
     <div class="title"><span class="mark">⚡</span> سجل XP اليومي</div>
     <div class="subtitle">${subtitleText}</div>
 
     <div class="phase-hud">${phaseHud}</div>
     <div class="phase-labels"><b>${phaseLabel}</b><span>${TOTAL_DAYS} يوم</span></div>
+
+    ${phaseMetaHtml}
 
     <div class="level-badge">🎖️ <span class="lv-num">Level ${lvl.level}:</span> ${lvl.title}</div>
     <div class="streak-line">🔥 <b>${streakCount}</b> ${streakCount === 1 ? 'يوم متتالي' : 'أيام متتالية'}</div>
@@ -838,6 +1270,10 @@ function render(){
         <div class="xp-goal-label">الهدف: ${DAILY_GOAL} XP</div>
       </div>
       <div class="bar-track"><div class="bar-fill ${goalReached?'done':''}" style="width:${goalPct}%"></div></div>
+      <div class="hours-row">
+        <label>⏱️ معدل ساعات العمل اليوم</label>
+        <input type="number" step="0.5" min="0" id="workHoursInput" placeholder="مثال: 4.5" value="${state.workHours[todayKey()] !== undefined ? state.workHours[todayKey()] : ''}">
+      </div>
     </div>
 
     ${['plus','minus'].map(kind => {
@@ -870,6 +1306,31 @@ function render(){
       <div class="actions">${btnsHtml}</div>
       `;
     }).join('')}
+
+    ${(() => {
+      const ds = state.daySummary[todayKey()] || {};
+      const fields = [
+        { key:'sleep', label:'😴 ساعات النوم' },
+        { key:'rest', label:'🛋️ ساعات الراحة' },
+        { key:'focus', label:'🎯 ساعات التركيز' },
+        { key:'study', label:'📚 ساعات الدراسة' },
+        { key:'youtube', label:'📺 ساعات تشتت يوتيوب' },
+        { key:'distraction', label:'📱 ساعات تشتت أخرى' },
+      ];
+      return `
+      <div class="card">
+        <div class="log-header"><h3>⏱️ ملخص اليوم</h3></div>
+        <div class="day-summary-grid">
+          ${fields.map(f => `
+            <div class="ds-item">
+              <label>${f.label}</label>
+              <input type="number" step="0.5" min="0" id="ds-${f.key}" value="${ds[f.key] !== undefined ? ds[f.key] : ''}">
+            </div>
+          `).join('')}
+        </div>
+        <button class="ds-save" id="saveDaySummaryBtn">حفظ ملخص اليوم</button>
+      </div>`;
+    })()}
 
     <button class="act-btn add-new wide" id="openAddPanel" style="width:100%; margin-bottom:16px;">
       <span class="emoji">➕</span>
@@ -928,7 +1389,7 @@ function render(){
           const start = dateFromKey(START_DATE);
           const end = dateFromKey(END_DATE);
           const todayStr = todayKey();
-          const firstWeekday = new Date(m.year, m.month, 1).getDay();
+          const firstWeekday = mondayFirstIndex(new Date(m.year, m.month, 1).getDay());
           const leadingBlanks = Array.from({length: firstWeekday}).map(() => `<div class="cal-day oor"></div>`).join('');
           const dayCells = Array.from({length: m.daysInMonth}).map((_, i) => {
             const dayNum = i + 1;
@@ -1098,6 +1559,8 @@ function render(){
 window.addEventListener('load', function(){
   const auth = getStoredAuth();
   initGoogleButton();
+  const loginThemeToggle = document.getElementById('loginThemeToggle');
+  if(loginThemeToggle) loginThemeToggle.addEventListener('click', toggleTheme);
   if(auth && auth.email){
     showApp(auth);
   } else {
