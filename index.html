@@ -6,6 +6,7 @@
 <title>سجل XP</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Tajawal:wght@400;500;700;900&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -560,9 +561,30 @@
     background:none; border:none; color: var(--muted); font-size:12px;
     text-decoration: underline; cursor:pointer; padding:0;
   }
+
+  /* Falling Stars — decorative background, very light, never blocks clicks/text */
+  .falling-stars-bg{
+    position: fixed; inset: 0; overflow: hidden;
+    pointer-events: none; z-index: 0;
+  }
+  .falling-stars-bg .fstar{
+    position: absolute; top: -8%;
+    color: var(--gold);
+    opacity: .18;
+    will-change: transform;
+    animation-name: fstar-fall;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+  }
+  @keyframes fstar-fall{
+    from{ transform: translateY(0); }
+    to{ transform: translateY(115vh); }
+  }
+  .wrap{ position: relative; z-index: 1; }
 </style>
 </head>
 <body>
+<div class="falling-stars-bg" id="fallingStarsBg" aria-hidden="true"></div>
 <div class="wrap" id="loginScreen" style="display:none;">
   <div class="login-top">
     <select class="design-select" id="designSelectLogin" title="نمط التصميم">
@@ -587,6 +609,27 @@
 </div>
 
 <script>
+/* Falling Stars — decorative only, generated once, doesn't touch app logic */
+(function initFallingStars(){
+  const box = document.getElementById('fallingStarsBg');
+  if(!box) return;
+  const COUNT = 22; // خفيف جدًا
+  for(let i=0;i<COUNT;i++){
+    const s = document.createElement('i');
+    s.className = 'fa-solid fa-star fstar';
+    const size = (Math.random()*8 + 6).toFixed(1); // 6px - 14px
+    const left = (Math.random()*100).toFixed(2);
+    const duration = (Math.random()*14 + 14).toFixed(1); // 14s - 28s
+    const delay = (Math.random()*-28).toFixed(1); // يبدأ متوزع من الأصل
+    s.style.left = left + '%';
+    s.style.fontSize = size + 'px';
+    s.style.animationDuration = duration + 's';
+    s.style.animationDelay = delay + 's';
+    s.style.opacity = (Math.random()*0.12 + 0.08).toFixed(2);
+    box.appendChild(s);
+  }
+})();
+
 /* ⚠️ Firebase Configuration — أنشئ مشروعًا على https://console.firebase.google.com
    ثم فعّل Authentication > Google، وأنشئ Firestore database،
    ثم انسخ إعدادات المشروع من Project Settings هنا: */
