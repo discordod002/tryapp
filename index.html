@@ -594,8 +594,25 @@ function signInWithGoogle(){
     var user = result.user;
     showApp({ email: user.email, name: user.displayName, picture: user.photoURL, uid: user.uid });
   }).catch(function(err){
-    console.error('فشل تسجيل الدخول:', err);
-    alert('تعذر تسجيل الدخول. تأكد من تفعيل Authentication > Google في مشروع Firebase.');
+    console.error('فشل تسجيل الدخول:', err.code, err.message);
+    var msg = 'خطأ: ' + err.code + '\n\n';
+    if(err.code === 'auth/unauthorized-domain'){
+      msg += 'النطاق غير مُصرّح به.\n\n';
+      msg += 'الحل:\n';
+      msg += '1. افتح Firebase Console → Authentication → Settings\n';
+      msg += '2. اذهب إلى "Authorized domains"\n';
+      msg += '3. أضف نطاق GitHub Pages الخاص بك (مثل: username.github.io)\n';
+      msg += '4. إذا كنت تجرب محليًا أضف: localhost';
+    } else if(err.code === 'auth/popup-blocked'){
+      msg += 'المتصفح حجب النافذة المنبثقة.\n';
+      msg += 'الحل: اسمح بالنوافذ المنبثقة لهذا الموقع.';
+    } else if(err.code === 'auth/operation-not-allowed'){
+      msg += 'تسجيل الدخول بجوقل غير مفعّل.\n';
+      msg += 'الحل: Firebase Console → Authentication → Sign-in method → فعّل Google.';
+    } else {
+      msg += err.message;
+    }
+    alert(msg);
   });
 }
 
