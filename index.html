@@ -1,4 +1,3 @@
-cat > /home/claude/xp-tracker.html << 'ENDOFFILE'
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -477,8 +476,6 @@ cat > /home/claude/xp-tracker.html << 'ENDOFFILE'
     background:none; border:none; color: var(--muted); font-size:12px;
     text-decoration: underline; cursor:pointer; padding:0;
   }
-  .sync-badge{ font-size:11px; color: var(--muted); }
-  .sync-badge.err{ color: var(--red); }
 </style>
 </head>
 <body>
@@ -492,7 +489,7 @@ cat > /home/claude/xp-tracker.html << 'ENDOFFILE'
     <button class="icon-toggle-btn" id="themeToggleBtnLogin" title="تبديل الوضع الداكن/الفاتح">☀️</button>
   </div>
   <div class="title login-title"><span class="mark">⚡</span> سجل XP اليومي</div>
-  <div class="login-sub">سجّل الدخول بحساب جوجل لتستخدم الموقع — بياناتك ستُزامن تلقائيًا مع حسابك</div>
+  <div class="login-sub">سجّل الدخول بحساب جوجل لتستخدم الموقع</div>
   <div id="googleBtn"></div>
 </div>
 
@@ -508,7 +505,6 @@ const THEME_KEY = 'xp-tracker-theme';
 const LAYOUT_KEY = 'xp-tracker-layout';
 const DESIGN_KEY = 'xp-tracker-design';
 let currentUser = null;
-let syncStatus = 'idle'; // idle | saving | saved | error
 
 function parseJwt(token){
   const base64Url = token.split('.')[1];
@@ -602,9 +598,7 @@ function initGoogleButton(){
 
 async function showApp(user){
   currentUser = user;
-  // مفتاح التخزين السحابي مرتبط بحساب جوجل الخاص بالمستخدم (وليس بالجهاز أو المتصفح)
-  CLOUD_KEY = 'xp-tracker-state:' + user.email;
-  LEGACY_LOCAL_KEY = 'xp-tracker-state-v1-' + user.email;
+  STORAGE_KEY = 'xp-tracker-state-v1-' + user.email;
   viewingDateKey = todayKey();
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
@@ -613,23 +607,7 @@ async function showApp(user){
   render();
 }
 
-let CLOUD_KEY = 'xp-tracker-state';
-let LEGACY_LOCAL_KEY = 'xp-tracker-state-v1';
-
-function defaultState(){
-  return { days: {}, customActions: [], overrides: {}, sortMode: { plus:'default', minus:'default' }, manualOrder: { plus:[], minus:[] }, progress: {}, customProgress: [], deletedProgress: [], progressTimestamps: {} };
-}
-
-function ensureDefaults(){
-  if(!state.customActions) state.customActions = [];
-  if(!state.overrides) state.overrides = {};
-  if(!state.sortMode) state.sortMode = { plus: 'default', minus: 'default' };
-  if(!state.manualOrder) state.manualOrder = { plus: [], minus: [] };
-  if(!state.progress) state.progress = {};
-  if(!state.customProgress) state.customProgress = [];
-  if(!state.deletedProgress) state.deletedProgress = [];
-  if(!state.progressTimestamps) state.progressTimestamps = {};
-}
+let STORAGE_KEY = 'xp-tracker-state-v1';
 
 const ACTIONS = [
   { id:'para',   label:'كتابة فقرة',           xp: 10,  emoji:'📝', kind:'plus' },
@@ -943,38 +921,23 @@ function migrateEntries(){
 }
 
 async function loadState(){
-  const loadingEl = document.getElementById('loading');
-  // 1) المحاولة الأولى: التخزين السحابي المرتبط بحساب جوجل (يعمل من أي جهاز أو متصفح)
   try{
-    const result = await window.storage.get(CLOUD_KEY, false);
-    if(result && result.value){
-      state = JSON.parse(result.value);
-      ensureDefaults();
-      if(migrateEntries()) await saveState();
-      return;
-    }
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) throw new Error('no saved state');
+    state = JSON.parse(raw);
+    if(!state.customActions) state.customActions = [];
+    if(!state.overrides) state.overrides = {};
+    if(!state.sortMode) state.sortMode = { plus: 'default', minus: 'default' };
+    if(!state.manualOrder) state.manualOrder = { plus: [], minus: [] };
+    if(!state.progress) state.progress = {};
+    if(!state.customProgress) state.customProgress = [];
+    if(!state.deletedProgress) state.deletedProgress = [];
+    if(!state.progressTimestamps) state.progressTimestamps = {};
+    if(migrateEntries()) await saveState();
   }catch(e){
-    // لا توجد بيانات سحابية بعد لهذا الحساب — نكمل للخطوة التالية
+    state = { days: {}, customActions: [], overrides: {}, sortMode: { plus:'default', minus:'default' }, manualOrder: { plus:[], minus:[] }, progress: {}, customProgress: [], deletedProgress: [], progressTimestamps: {} };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }
-
-  // 2) لا توجد بيانات سحابية: تحقق من وجود بيانات قديمة محفوظة محليًا على هذا الجهاز فقط،
-  //    وإن وُجدت انقلها تلقائيًا إلى التخزين السحابي حتى لا تُفقد عند التبديل بين الأجهزة
-  try{
-    const raw = localStorage.getItem(LEGACY_LOCAL_KEY);
-    if(raw){
-      state = JSON.parse(raw);
-      ensureDefaults();
-      migrateEntries();
-      await saveState();
-      return;
-    }
-  }catch(e){
-    // تجاهل أي خطأ في القراءة المحلية القديمة
-  }
-
-  // 3) لا توجد بيانات سحابية ولا محلية: ابدأ بحالة جديدة فارغة
-  state = defaultState();
-  await saveState();
 }
 
 function effectiveAction(a){
@@ -1080,26 +1043,11 @@ async function resetOverride(id){
 }
 
 async function saveState(){
-  syncStatus = 'saving';
-  updateSyncBadge();
   try{
-    await window.storage.set(CLOUD_KEY, JSON.stringify(state), false);
-    syncStatus = 'saved';
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }catch(e){
-    console.error('تعذر الحفظ على الحساب السحابي', e);
-    syncStatus = 'error';
+    console.error('تعذر الحفظ', e);
   }
-  updateSyncBadge();
-}
-
-function updateSyncBadge(){
-  const el = document.getElementById('syncBadge');
-  if(!el) return;
-  if(syncStatus === 'saving') el.textContent = '⏳ جارٍ الحفظ...';
-  else if(syncStatus === 'saved') el.textContent = '☁️ محفوظ في حسابك';
-  else if(syncStatus === 'error') el.textContent = '⚠️ تعذر الحفظ، تحقق من الاتصال';
-  else el.textContent = '';
-  el.className = 'sync-badge' + (syncStatus === 'error' ? ' err' : '');
 }
 
 function getEntriesFor(key){
@@ -1450,7 +1398,6 @@ function render(){
     <div class="user-bar">
       <span class="u-name">${currentUser && currentUser.picture ? `<img src="${currentUser.picture}" alt="">` : ''}${escapeHtml(currentUser ? (currentUser.name || currentUser.email) : '')}</span>
       <span class="u-right">
-        <span class="sync-badge" id="syncBadge"></span>
         <select class="design-select" id="designSelect" title="نمط التصميم">
           <option value="normal" ${currentDesign==='normal'?'selected':''}>🎨 عادي</option>
           <option value="islamic" ${currentDesign==='islamic'?'selected':''}>🕌 إسلامي</option>
@@ -1641,7 +1588,7 @@ function render(){
       </div>
 
       <div class="content-block">
-        <div class="footnote">بياناتك تُحفظ تلقائيًا وتُزامن مع حسابك — تبقى متاحة من أي جهاز أو متصفح تسجّل الدخول منه بنفس حساب جوجل</div>
+        <div class="footnote">البيانات محفوظة تلقائيًا على هذا الجهاز</div>
         <div class="daily-message">${dailyMessage({ notStarted, daysUntilStart, finished, dayNum, currentPhaseIdx, dayInPhase })}</div>
       </div>
 
@@ -1672,8 +1619,6 @@ function render(){
 
     </div>
   `;
-
-  updateSyncBadge();
 
   allActions().forEach(a => {
     const btn = app.querySelector(`[data-id="${a.id}"]`);
@@ -1899,6 +1844,3 @@ window.addEventListener('load', function(){
 </script>
 </body>
 </html>
-
-
-done
