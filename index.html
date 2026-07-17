@@ -461,6 +461,54 @@
   .progress-add-panel .save-btn{ background: var(--gold); color:#241f0a; border-color: var(--gold); }
   .progress-add-panel .cancel-btn{ background: transparent; color: var(--muted); }
 
+  /* Pie chart for overall progress */
+  .progress-pie-wrap{ display:flex; align-items:center; justify-content:center; gap:16px; margin-bottom:14px; flex-wrap:wrap; }
+  .progress-pie-svg{ flex-shrink:0; }
+  .progress-pie-center-pct{ font-family: var(--font-mono); font-weight:800; font-size:20px; fill: var(--text); }
+  .progress-pie-legend{ display:flex; flex-direction:column; gap:6px; font-size:12px; color: var(--muted); }
+  .progress-pie-legend .dot{ display:inline-block; width:9px; height:9px; border-radius:50%; margin-inline-end:6px; vertical-align:middle; }
+
+  /* Emoji picker for actions */
+  .emoji-picker-row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .emoji-picker-row input[type="text"]{
+    width: 60px; text-align:center; font-size:20px; flex-shrink:0;
+  }
+  .emoji-swatches{ display:flex; gap:4px; flex-wrap:wrap; }
+  .emoji-swatch-btn{
+    width:30px; height:30px; border-radius:8px; background: var(--panel-2); border:1px solid var(--line);
+    font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;
+  }
+  .emoji-swatch-btn:hover{ border-color: var(--gold); }
+
+  /* Favorite quote section */
+  .quote-card{
+    text-align:center; padding: 26px 18px;
+  }
+  .quote-mark{ font-size: 28px; color: var(--gold); line-height:1; margin-bottom:6px; }
+  .quote-text{
+    font-family: var(--font-title); font-size:17px; line-height:1.8; color: var(--text);
+    white-space: pre-wrap;
+  }
+  .quote-empty{ color: var(--muted); font-size:13px; }
+  .quote-edit-btn{
+    margin-top:14px; background: var(--panel-2); border:1px solid var(--line); color: var(--text);
+    font-family: var(--font-display); font-weight:700; font-size:12px; border-radius:10px;
+    padding: 8px 14px; cursor:pointer;
+  }
+  .quote-editor{ margin-top:14px; display:flex; flex-direction:column; gap:10px; }
+  .quote-editor textarea{
+    background: var(--panel-2); border:1px solid var(--line); border-radius:10px;
+    padding:12px; color: var(--text); font-family: var(--font-title); font-size:14px;
+    min-height: 90px; resize: vertical; text-align:center;
+  }
+  .quote-editor .actions-row{ display:flex; gap:8px; justify-content:center; }
+  .quote-editor button{
+    border-radius:10px; border:1px solid var(--line); padding: 9px 16px;
+    font-family: var(--font-display); font-weight:700; font-size: 13px; cursor:pointer;
+  }
+  .quote-editor .save-btn{ background: var(--gold); color:#241f0a; border-color: var(--gold); }
+  .quote-editor .cancel-btn{ background: transparent; color: var(--muted); }
+
   /* Login screen */
   #loginScreen{ text-align:center; padding-top: 60px; }
   #loginScreen .login-top{ display:flex; justify-content:flex-end; gap:8px; margin-bottom:20px; }
@@ -659,10 +707,12 @@ const ACTIONS = [
   { id:'lazy',   label:'يوم كامل من اللهو ومواقع التواصل الاجتماعي', xp: -50, emoji:'🎮', kind:'minus' },
 ];
 
+const EMOJI_SWATCHES = ['📝','🧩','📤','😴','🎮','⭐','🔥','💪','🎯','📚','🧠','✅','🚫','⚠️','😅','🕐','🏆','✨','📌','💤'];
+
 const PHASES = [
-  { name:'المرحلة ١', start:'2026-07-18', end:'2026-08-31' },
-  { name:'المرحلة ٢', start:'2026-09-01', end:'2026-11-30' },
-  { name:'المرحلة ٣', start:'2026-12-01', end:'2026-12-31' },
+  { name:'المرحلة الأولى', start:'2026-07-20', end:'2026-08-31' },
+  { name:'المرحلة الثانية', start:'2026-09-01', end:'2026-11-30' },
+  { name:'المرحلة الثالثة', start:'2026-12-01', end:'2026-12-31' },
 ];
 const START_DATE = PHASES[0].start;
 const END_DATE = PHASES[PHASES.length-1].end;
@@ -877,6 +927,33 @@ function renderProgressSection(section){
   `;
 }
 
+/* ---------- Overall progress pie chart (SVG) ---------- */
+function renderProgressPie(){
+  const overall = overallProgress();
+  const pct = overall.pct;
+  const r = 46, cx = 55, cy = 55;
+  const circumference = 2 * Math.PI * r;
+  const doneLen = circumference * (pct/100);
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  const trackColor = isLight ? '#ddd5ec' : '#322e47';
+  return `
+    <div class="progress-pie-wrap">
+      <svg class="progress-pie-svg" width="110" height="110" viewBox="0 0 110 110">
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${trackColor}" stroke-width="14"></circle>
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--gold)" stroke-width="14"
+          stroke-dasharray="${doneLen} ${circumference - doneLen}"
+          stroke-linecap="round"
+          transform="rotate(-90 ${cx} ${cy})"></circle>
+        <text x="${cx}" y="${cy+2}" text-anchor="middle" dominant-baseline="middle" class="progress-pie-center-pct">${pct}%</text>
+      </svg>
+      <div class="progress-pie-legend">
+        <div><span class="dot" style="background: var(--gold)"></span>مكتمل: ${overall.checked} من ${overall.total}</div>
+        <div><span class="dot" style="background: ${trackColor}"></span>متبقٍ: ${overall.total - overall.checked}</div>
+      </div>
+    </div>
+  `;
+}
+
 function todayKey(d = new Date()){
   const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
   return `${y}-${m}-${day}`;
@@ -963,7 +1040,7 @@ function migrateEntries(){
 }
 
 async function loadState(){
-  const emptyState = { days: {}, customActions: [], overrides: {}, sortMode: { plus:'default', minus:'default' }, manualOrder: { plus:[], minus:[] }, progress: {}, customProgress: [], deletedProgress: [], progressTimestamps: {} };
+  const emptyState = { days: {}, customActions: [], overrides: {}, sortMode: { plus:'default', minus:'default' }, manualOrder: { plus:[], minus:[] }, progress: {}, customProgress: [], deletedProgress: [], progressTimestamps: {}, favoriteQuote: '' };
   try{
     if(currentUser && currentUser.uid){
       const doc = await db.collection('xp-tracker-data').doc(currentUser.uid).get();
@@ -977,6 +1054,7 @@ async function loadState(){
         if(!state.customProgress) state.customProgress = [];
         if(!state.deletedProgress) state.deletedProgress = [];
         if(!state.progressTimestamps) state.progressTimestamps = {};
+        if(state.favoriteQuote === undefined) state.favoriteQuote = '';
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
         if(migrateEntries()) await saveState();
         return;
@@ -997,6 +1075,7 @@ async function loadState(){
     if(!state.customProgress) state.customProgress = [];
     if(!state.deletedProgress) state.deletedProgress = [];
     if(!state.progressTimestamps) state.progressTimestamps = {};
+    if(state.favoriteQuote === undefined) state.favoriteQuote = '';
     if(currentUser && currentUser.uid){
       try{ await db.collection('xp-tracker-data').doc(currentUser.uid).set(state); }catch(e2){}
     }
@@ -1011,7 +1090,7 @@ function effectiveAction(a){
   const o = state.overrides[a.id];
   if(!o) return a;
   const xp = (typeof o.xp === 'number') ? o.xp : a.xp;
-  return { ...a, label: o.label ?? a.label, xp, kind: xp >= 0 ? 'plus' : 'minus' };
+  return { ...a, label: o.label ?? a.label, xp, emoji: o.emoji ?? a.emoji, kind: xp >= 0 ? 'plus' : 'minus' };
 }
 
 function allActions(){
@@ -1063,12 +1142,12 @@ async function moveAction(kind, id, dir){
 let addPanelOpen = false;
 let editingId = null;
 
-async function addCustomAction(label, xp){
+async function addCustomAction(label, xp, emoji){
   const action = {
     id: 'custom_' + Date.now(),
     label,
     xp,
-    emoji: xp >= 0 ? '✨' : '⚠️',
+    emoji: emoji || (xp >= 0 ? '✨' : '⚠️'),
     kind: xp >= 0 ? 'plus' : 'minus',
     custom: true,
   };
@@ -1088,14 +1167,15 @@ function isBuiltIn(id){
   return ACTIONS.some(a => a.id === id);
 }
 
-async function saveEdit(id, label, xp){
+async function saveEdit(id, label, xp, emoji){
   const customIdx = state.customActions.findIndex(a => a.id === id);
   if(customIdx !== -1){
     state.customActions[customIdx].label = label;
     state.customActions[customIdx].xp = xp;
+    state.customActions[customIdx].emoji = emoji;
     state.customActions[customIdx].kind = xp >= 0 ? 'plus' : 'minus';
   } else {
-    state.overrides[id] = { label, xp };
+    state.overrides[id] = { label, xp, emoji };
   }
   await saveState();
   editingId = null;
@@ -1158,6 +1238,7 @@ function phaseInfo(){
 
 let editingNoteId = null;
 let editingEntryId = null;
+let editingQuote = false;
 
 async function addEntry(action){
   const entries = getEntriesFor(viewingDateKey);
@@ -1202,6 +1283,13 @@ async function saveNote(id, text){
   if(entry) entry.note = text;
   await saveState();
   editingNoteId = null;
+  render();
+}
+
+async function saveFavoriteQuote(text){
+  state.favoriteQuote = text;
+  await saveState();
+  editingQuote = false;
   render();
 }
 
@@ -1417,7 +1505,7 @@ function render(){
     : `${PHASES[currentPhaseIdx].name} — يوم ${dayInPhase} من ${PHASES[currentPhaseIdx].days}`;
 
   const subtitleText = notStarted
-    ? `يبدأ التحدي في ١٨/٧ وينتهي في ٣١/١٢ — يمكن تسجيل الإجراءات من الآن`
+    ? `يبدأ التحدي في ٢٠/٧ وينتهي في ٣١/١٢ — يمكن تسجيل الإجراءات من الآن`
     : (finished ? 'انتهت الرحلة — يمكن الاطلاع على النتيجة النهائية' : `اليوم رقم ${dayNum} من ${TOTAL_DAYS} إجمالًا`);
 
   const viewingLabel = viewingDateKey === todayK ? 'اليوم' : fmtStatDate(viewingDateKey);
@@ -1520,6 +1608,12 @@ function render(){
             <input type="number" id="newXp" placeholder="XP" value="10">
             <div class="add-hint">يُستخدم رقم سالب إذا كانت المهمة تُنقص نقاط الخبرة (مثال: -15)</div>
           </div>
+          <div class="emoji-picker-row">
+            <input type="text" id="newEmoji" value="✨" maxlength="4">
+            <div class="emoji-swatches">
+              ${EMOJI_SWATCHES.map(em => `<button type="button" class="emoji-swatch-btn" data-emoji-target="newEmoji" data-emoji-val="${em}">${em}</button>`).join('')}
+            </div>
+          </div>
           <div class="actions-row">
             <button class="cancel-btn" id="cancelAdd">إلغاء</button>
             <button class="save-btn" id="saveAdd">حفظ المهمة</button>
@@ -1534,7 +1628,13 @@ function render(){
             <input type="text" id="editLabel" value="${target.label}" maxlength="40">
             <div class="row">
               <input type="number" id="editXp" value="${target.xp}">
-              <div class="add-hint">عدّل اسم المهمة، ويمكن أيضًا تعديل قيمة نقاط الخبرة</div>
+              <div class="add-hint">عدّل اسم المهمة، ويمكن أيضًا تعديل قيمة نقاط الخبرة والرمز التعبيري</div>
+            </div>
+            <div class="emoji-picker-row">
+              <input type="text" id="editEmoji" value="${target.emoji}" maxlength="4">
+              <div class="emoji-swatches">
+                ${EMOJI_SWATCHES.map(em => `<button type="button" class="emoji-swatch-btn" data-emoji-target="editEmoji" data-emoji-val="${em}">${em}</button>`).join('')}
+              </div>
             </div>
             <div class="actions-row">
               ${isBuiltIn(editingId) ? `<button class="reset-link" id="resetEdit">استعادة الاسم الافتراضي</button>` : ''}
@@ -1672,6 +1772,7 @@ function render(){
             <h3>📈 نسبة التقدم</h3>
             <span class="progress-overall">${overallProgress().pct}% (${overallProgress().checked}/${overallProgress().total})</span>
           </div>
+          ${renderProgressPie()}
           <div class="progress-sections">
             ${THESIS_STRUCTURE.map(sec => renderProgressSection(sec)).join('')}
           </div>
@@ -1688,6 +1789,24 @@ function render(){
               <button class="save-btn" id="saveProgressAdd">حفظ العنصر</button>
             </div>
           </div>` : ''}
+        </div>
+      </div>
+
+      <div class="content-block">
+        <div class="card quote-card">
+          <div class="quote-mark">💌</div>
+          ${editingQuote ? `
+            <div class="quote-editor">
+              <textarea id="quoteText" placeholder="اكتب هنا العبارة أو الاقتباس الذي أعجبك...">${escapeHtml(state.favoriteQuote || '')}</textarea>
+              <div class="actions-row">
+                <button class="cancel-btn" id="cancelQuote">إلغاء</button>
+                <button class="save-btn" id="saveQuoteBtn">حفظ</button>
+              </div>
+            </div>
+          ` : `
+            ${state.favoriteQuote ? `<div class="quote-text">${escapeHtml(state.favoriteQuote)}</div>` : `<div class="quote-empty">لم تُضِف عبارة أو اقتباسًا بعد</div>`}
+            <button class="quote-edit-btn" id="editQuoteBtn">${state.favoriteQuote ? '✎ تعديل العبارة' : '➕ أضف عبارة'}</button>
+          `}
         </div>
       </div>
 
@@ -1715,6 +1834,15 @@ function render(){
       editingNoteId = null;
       editingEntryId = null;
       render();
+    });
+  });
+  app.querySelectorAll('[data-emoji-target]').forEach(x => {
+    x.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      const targetId = x.getAttribute('data-emoji-target');
+      const val = x.getAttribute('data-emoji-val');
+      const input = document.getElementById(targetId);
+      if(input) input.value = val;
     });
   });
   app.querySelectorAll('[data-sort-kind]').forEach(x => {
@@ -1842,10 +1970,12 @@ function render(){
   if(saveBtn) saveBtn.addEventListener('click', () => {
     const labelEl = document.getElementById('newLabel');
     const xpEl = document.getElementById('newXp');
+    const emojiEl = document.getElementById('newEmoji');
     const label = labelEl.value.trim();
     const xp = parseInt(xpEl.value, 10);
+    const emoji = emojiEl ? emojiEl.value.trim() : '';
     if(!label || isNaN(xp) || xp === 0) return;
-    addCustomAction(label, xp);
+    addCustomAction(label, xp, emoji);
   });
 
   const cancelEditBtn = document.getElementById('cancelEdit');
@@ -1856,10 +1986,12 @@ function render(){
   if(saveEditBtn) saveEditBtn.addEventListener('click', () => {
     const labelEl = document.getElementById('editLabel');
     const xpEl = document.getElementById('editXp');
+    const emojiEl = document.getElementById('editEmoji');
     const label = labelEl.value.trim();
     const xp = parseInt(xpEl.value, 10);
+    const emoji = emojiEl ? emojiEl.value.trim() : '';
     if(!label || isNaN(xp) || xp === 0) return;
-    saveEdit(editingId, label, xp);
+    saveEdit(editingId, label, xp, emoji);
   });
 
   const calToggle = document.getElementById('calToggle');
@@ -1877,6 +2009,16 @@ function render(){
     const sectionId = sectionEl.value;
     if(!label || !sectionId) return;
     addCustomProgressItem(label, sectionId);
+  });
+
+  const editQuoteBtn = document.getElementById('editQuoteBtn');
+  if(editQuoteBtn) editQuoteBtn.addEventListener('click', () => { editingQuote = true; render(); });
+  const cancelQuoteBtn = document.getElementById('cancelQuote');
+  if(cancelQuoteBtn) cancelQuoteBtn.addEventListener('click', () => { editingQuote = false; render(); });
+  const saveQuoteBtn = document.getElementById('saveQuoteBtn');
+  if(saveQuoteBtn) saveQuoteBtn.addEventListener('click', () => {
+    const ta = document.getElementById('quoteText');
+    saveFavoriteQuote(ta ? ta.value.trim() : '');
   });
 
   const signOutBtn = document.getElementById('signOutBtn');
