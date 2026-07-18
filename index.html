@@ -192,53 +192,44 @@
   .act-btn{
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     gap: 6px; padding: 14px 8px; border-radius: 15px;
-    color: #fff; cursor:pointer;
+    color: var(--text); cursor:pointer;
     font-family: var(--font-display); font-size: 13px; font-weight:700;
     transition: 0.3s ease, transform .12s ease;
     -webkit-tap-highlight-color: transparent;
     position: relative;
-    overflow: hidden;
+    border: 2px solid transparent;
   }
   .act-btn:active{ transform: scale(0.96); }
   .act-btn .emoji{ font-size: 22px; }
   .act-btn .xp{ font-family: var(--font-mono); font-size: 12px; }
 
-  /* Uiverse-style "user-profile" card look, adapted for achievements (green) / violations (red) */
+  /* Uiverse-style "user-profile" border look: only a thin edge carries the corner-fade
+     gradient (center stays the normal panel color), and it glows brighter on hover. */
   .act-btn.plus{
-    background: linear-gradient(to bottom right, var(--green-soft) 0%, rgba(110,231,168,0) 55%),
-                color-mix(in srgb, var(--green-soft) 20%, transparent);
+    background:
+      linear-gradient(var(--panel), var(--panel)) padding-box,
+      linear-gradient(135deg, var(--green-soft) 0%, transparent 50%) border-box;
   }
   .act-btn.plus:hover, .act-btn.plus:focus-within{
-    background: linear-gradient(to bottom right, var(--green-soft) 0%, rgba(110,231,168,0) 55%),
-                color-mix(in srgb, var(--green-soft) 55%, transparent);
-    box-shadow: 0 0 10px color-mix(in srgb, var(--green-soft) 45%, transparent);
+    background:
+      linear-gradient(var(--panel), var(--panel)) padding-box,
+      linear-gradient(135deg, var(--green-soft) 0%, transparent 65%) border-box;
+    box-shadow: 0 0 10px color-mix(in srgb, var(--green-soft) 50%, transparent);
   }
   .act-btn.plus .xp{ color: var(--green-soft); }
 
   .act-btn.minus{
-    background: linear-gradient(to bottom right, var(--red-soft) 0%, rgba(255,107,120,0) 55%),
-                color-mix(in srgb, var(--red-soft) 20%, transparent);
+    background:
+      linear-gradient(var(--panel), var(--panel)) padding-box,
+      linear-gradient(135deg, var(--red-soft) 0%, transparent 50%) border-box;
   }
   .act-btn.minus:hover, .act-btn.minus:focus-within{
-    background: linear-gradient(to bottom right, var(--red-soft) 0%, rgba(255,107,120,0) 55%),
-                color-mix(in srgb, var(--red-soft) 55%, transparent);
-    box-shadow: 0 0 10px color-mix(in srgb, var(--red-soft) 45%, transparent);
+    background:
+      linear-gradient(var(--panel), var(--panel)) padding-box,
+      linear-gradient(135deg, var(--red-soft) 0%, transparent 65%) border-box;
+    box-shadow: 0 0 10px color-mix(in srgb, var(--red-soft) 50%, transparent);
   }
   .act-btn.minus .xp{ color: var(--red-soft); }
-
-  .act-btn.plus::after, .act-btn.minus::after{
-    content: "";
-    position: absolute;
-    inset: 2px;
-    border-radius: 13px;
-    background: var(--btn-inner-bg, #1a1a1a);
-    z-index: -1;
-  }
-  .act-btn.plus > *, .act-btn.minus > *{ position: relative; z-index: 1; }
-  [data-theme="light"] .act-btn.plus, [data-theme="light"] .act-btn.minus{
-    --btn-inner-bg: #1a1a1a;
-    color: #fff;
-  }
 
   .act-btn.wide{ grid-column: span 2; flex-direction: row; }
   .act-btn .del-x{
