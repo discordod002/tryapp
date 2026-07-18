@@ -807,7 +807,9 @@ function toggleLayout(){
   render();
 }
 
-/* ---------- Starfield background (تشغيل/إيقاف) ---------- */
+/* ---------- Starfield background (تشغيل/إيقاف) ----------
+   يُخزَّن التفضيل داخل state ويُزامَن عبر Firestore (يتبع الحساب على كل الأجهزة).
+   localStorage هنا يُستخدم فقط كتخمين سريع قبل اكتمال تسجيل الدخول. */
 function getStoredStarfield(){
   const saved = localStorage.getItem(STARFIELD_KEY);
   return saved === 'off' ? 'off' : 'on';
@@ -818,12 +820,16 @@ function applyStarfield(mode){
   document.documentElement.setAttribute('data-starfield', mode);
 }
 function toggleStarfield(){
-  starfieldMode = starfieldMode === 'off' ? 'on' : 'off';
-  localStorage.setItem(STARFIELD_KEY, starfieldMode);
-  applyStarfield(starfieldMode);
+  const next = starfieldMode === 'off' ? 'on' : 'off';
+  applyStarfield(next);
+  localStorage.setItem(STARFIELD_KEY, next);
   const loginBtn = document.getElementById('starfieldToggleBtnLogin');
-  if(loginBtn) loginBtn.textContent = starfieldMode === 'off' ? '✨' : '🌌';
-  if(state) render();
+  if(loginBtn) loginBtn.textContent = next === 'off' ? '✨' : '🌌';
+  if(state){
+    state.starfield = next;
+    saveState();
+    render();
+  }
 }
 
 function signInWithGoogle(){
@@ -1230,7 +1236,7 @@ function migrateEntries(){
 }
 
 async function loadState(){
-  const emptyState = { days: {}, customActions: [], overrides: {}, sortMode: { plus:'default', minus:'default' }, manualOrder: { plus:[], minus:[] }, progress: {}, customProgress: [], deletedProgress: [], progressTimestamps: {}, favoriteQuote: '' };
+  const emptyState = { days: {}, customActions: [], overrides: {}, sortMode: { plus:'default', minus:'default' }, manualOrder: { plus:[], minus:[] }, progress: {}, customProgress: [], deletedProgress: [], progressTimestamps: {}, favoriteQuote: '', starfield: 'on' };
   try{
     if(currentUser && currentUser.uid){
       const doc = await db.collection('xp-tracker-data').doc(currentUser.uid).get();
@@ -1245,6 +1251,8 @@ async function loadState(){
         if(!state.deletedProgress) state.deletedProgress = [];
         if(!state.progressTimestamps) state.progressTimestamps = {};
         if(state.favoriteQuote === undefined) state.favoriteQuote = '';
+        if(!state.starfield) state.starfield = 'on';
+        applyStarfield(state.starfield);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
         if(migrateEntries()) await saveState();
         return;
@@ -1266,12 +1274,15 @@ async function loadState(){
     if(!state.deletedProgress) state.deletedProgress = [];
     if(!state.progressTimestamps) state.progressTimestamps = {};
     if(state.favoriteQuote === undefined) state.favoriteQuote = '';
+    if(!state.starfield) state.starfield = 'on';
+    applyStarfield(state.starfield);
     if(currentUser && currentUser.uid){
       try{ await db.collection('xp-tracker-data').doc(currentUser.uid).set(state); }catch(e2){}
     }
     if(migrateEntries()) await saveState();
   }catch(e){
     state = emptyState;
+    applyStarfield(state.starfield);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }
 }
