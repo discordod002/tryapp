@@ -581,18 +581,8 @@
     overflow: hidden;
     z-index: -1;
     pointer-events: none;
-    transition: background .2s ease;
   }
-  [data-theme="light"] #starfield-container {
-    background: radial-gradient(ellipse at bottom, #dfe4f5 0%, #f4f2fa 100%);
-  }
-  #stars, #stars2, #stars3 { position: absolute; top: 0; left: 0; opacity: .45; transition: opacity .2s ease, filter .2s ease; }
-  [data-theme="light"] #stars,
-  [data-theme="light"] #stars2,
-  [data-theme="light"] #stars3 {
-    opacity: .35;
-    filter: invert(1) brightness(0.75);
-  }
+  #stars, #stars2, #stars3 { position: absolute; top: 0; left: 0; }
   #stars {
     width: 1px;
     height: 1px;
