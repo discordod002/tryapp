@@ -561,6 +561,15 @@
     background:none; border:none; color: var(--muted); font-size:12px;
     text-decoration: underline; cursor:pointer; padding:0;
   }
+
+  /* Unified emoji style: Microsoft 3D Fluent images (same rendering on iPhone/Android/desktop) */
+  img.femoji{
+    height: 1em; width: 1em;
+    vertical-align: -0.18em;
+    object-fit: contain;
+    display: inline-block;
+    margin: 0 0.02em;
+  }
 </style>
 </head>
 <body>
@@ -2086,6 +2095,136 @@ window.addEventListener('load', function(){
 
   initFirebaseAuth();
 });
+</script>
+
+<script>
+/* =====================================================================
+   Unify emoji rendering across all devices/platforms.
+   Replaces native text emoji with Microsoft "Fluent Emoji 3D" images
+   so they look identical on iPhone, Android, and every browser/OS,
+   instead of relying on each device's own built-in emoji font.
+   ===================================================================== */
+(function(){
+  var CDN = 'https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/';
+  // Matches a pictographic emoji, optional variation selector, and ZWJ sequences.
+  var EMOJI_RE = /\p{Extended_Pictographic}\uFE0F?(?:\u200D\p{Extended_Pictographic}\uFE0F?)*/gu;
+  var SKIP_TAGS = { SCRIPT:1, STYLE:1, IMG:1, TEXTAREA:1, INPUT:1 };
+
+  function codepointsOf(str){
+    return Array.from(str).map(function(ch){ return ch.codePointAt(0).toString(16); });
+  }
+
+  function candidateUrls(match){
+    var cps = codepointsOf(match);
+    var urls = [];
+    var withFe0f = cps.join('-') + '_3d.png';
+    urls.push(CDN + withFe0f);
+    var noFe0f = cps.filter(function(c){ return c !== 'fe0f'; }).join('-') + '_3d.png';
+    if(noFe0f !== withFe0f) urls.push(CDN + noFe0f);
+    var base = cps.filter(function(c){ return c !== 'fe0f' && c !== '200d'; })[0];
+    if(base){
+      var baseUrl = CDN + base + '_3d.png';
+      if(urls.indexOf(baseUrl) === -1) urls.push(baseUrl);
+    }
+    return urls;
+  }
+
+  function makeImg(match){
+    var img = document.createElement('img');
+    img.className = 'femoji';
+    img.alt = match;
+    img.loading = 'lazy';
+    img.draggable = false;
+    var urls = candidateUrls(match);
+    var i = 0;
+    img.src = urls[i];
+    img.addEventListener('error', function onErr(){
+      i++;
+      if(i < urls.length){
+        img.src = urls[i];
+      } else {
+        // No Fluent 3D asset available anywhere: fall back to the plain emoji text.
+        var textNode = document.createTextNode(match);
+        if(img.parentNode) img.parentNode.replaceChild(textNode, img);
+      }
+    });
+    return img;
+  }
+
+  function replaceInTextNode(node){
+    var text = node.nodeValue;
+    EMOJI_RE.lastIndex = 0;
+    if(!EMOJI_RE.test(text)) return;
+    EMOJI_RE.lastIndex = 0;
+    var frag = document.createDocumentFragment();
+    var lastIndex = 0;
+    var m;
+    while((m = EMOJI_RE.exec(text)) !== null){
+      if(m.index > lastIndex){
+        frag.appendChild(document.createTextNode(text.slice(lastIndex, m.index)));
+      }
+      frag.appendChild(makeImg(m[0]));
+      lastIndex = m.index + m[0].length;
+    }
+    if(lastIndex < text.length){
+      frag.appendChild(document.createTextNode(text.slice(lastIndex)));
+    }
+    node.parentNode.replaceChild(frag, node);
+  }
+
+  function walk(node){
+    if(node.nodeType === 3){
+      replaceInTextNode(node);
+      return;
+    }
+    if(node.nodeType !== 1) return;
+    if(SKIP_TAGS[node.tagName]) return;
+    if(node.classList && node.classList.contains('femoji')) return;
+    var children = Array.prototype.slice.call(node.childNodes);
+    for(var i=0;i<children.length;i++) walk(children[i]);
+  }
+
+  function emojifyAttrs(root){
+    // Cover common attributes that may carry emoji glyphs (titles/placeholders/aria-labels).
+    var ATTRS = ['title','placeholder','aria-label'];
+    var all = root.querySelectorAll ? root.querySelectorAll('*') : [];
+    for(var i=0;i<all.length;i++){
+      var el = all[i];
+      for(var j=0;j<ATTRS.length;j++){
+        var a = ATTRS[j];
+        var v = el.getAttribute && el.getAttribute(a);
+        if(v){
+          EMOJI_RE.lastIndex = 0;
+          if(EMOJI_RE.test(v)){
+            // Strip the emoji glyph from the attribute (images can't render inside plain attributes).
+            EMOJI_RE.lastIndex = 0;
+            el.setAttribute(a, v.replace(EMOJI_RE, '').replace(/\s{2,}/g,' ').trim());
+          }
+        }
+      }
+    }
+  }
+
+  var scheduled = false;
+  function scheduleWalk(){
+    if(scheduled) return;
+    scheduled = true;
+    requestAnimationFrame(function(){
+      scheduled = false;
+      walk(document.body);
+      emojifyAttrs(document.body);
+    });
+  }
+
+  var observer = new MutationObserver(function(){ scheduleWalk(); });
+  observer.observe(document.documentElement, { childList:true, subtree:true, characterData:true });
+
+  if(document.body){
+    scheduleWalk();
+  } else {
+    document.addEventListener('DOMContentLoaded', scheduleWalk);
+  }
+})();
 </script>
 </body>
 </html>
